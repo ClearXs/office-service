@@ -1,0 +1,18 @@
+mybatis-plus:
+  type-aliases-package: cc.allio.uno.turbo.**.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/turbo_test
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+persistent:
+  tenant:
+    ignore-list:
+      - student
+      - org
+      - biz_tree

@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://43.139.180.60:5432/turbo_office
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: 43.139.180.60
+      port: 6379
+      password: allio@2024
+      database: 1
+
+logging:
+  level:
+    cc.allio.uno: debug

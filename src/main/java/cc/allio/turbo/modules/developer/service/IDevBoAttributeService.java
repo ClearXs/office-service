@@ -1,8 +1,8 @@
 package cc.allio.turbo.modules.developer.service;
 
+import cc.allio.turbo.common.db.mybatis.service.ITurboTreeCrudService;
 import cc.allio.turbo.common.domain.Domains;
 import cc.allio.turbo.common.domain.JsonDomain;
-import cc.allio.turbo.common.db.mybatis.service.ITurboTreeCrudService;
 import cc.allio.turbo.modules.developer.domain.BoAttributeTree;
 import cc.allio.turbo.modules.developer.domain.DevAttributeProps;
 import cc.allio.turbo.modules.developer.entity.DevBoAttribute;

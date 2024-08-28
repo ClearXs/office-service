@@ -1,7 +1,6 @@
 package cc.allio.turbo.modules.developer.entity;
 
 import cc.allio.turbo.common.db.entity.Entity;
-import cc.allio.turbo.modules.developer.domain.BoAttrSchema;
 import cc.allio.turbo.modules.developer.domain.BoSchema;
 import cc.allio.uno.core.concurrent.LockContext;
 import cc.allio.uno.data.orm.dsl.Table;

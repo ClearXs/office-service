@@ -7,8 +7,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.sql.Types;
-
 /**
  * attribute字段类型
  *

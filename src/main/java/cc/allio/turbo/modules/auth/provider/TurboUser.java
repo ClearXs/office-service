@@ -1,18 +1,20 @@
 package cc.allio.turbo.modules.auth.provider;
 
-import cc.allio.turbo.modules.system.constant.UserStatus;
-import cc.allio.turbo.modules.system.domain.SysUserVO;
-import cc.allio.uno.core.bean.MapWrapper;
 import cc.allio.turbo.modules.auth.authority.TurboGrantedAuthority;
-import lombok.AllArgsConstructor;
+import cc.allio.turbo.modules.system.constant.UserStatus;
+import cc.allio.turbo.modules.system.entity.SysUser;
+import cc.allio.uno.core.bean.MapWrapper;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static cc.allio.turbo.common.constant.Secures.*;
 
 /**
  * auth user
@@ -23,69 +25,58 @@ import java.util.stream.Collectors;
  */
 @Setter
 @Getter
-@AllArgsConstructor
 public class TurboUser implements UserDetails {
 
-    private Set<TurboGrantedAuthority> authorities;
-
+    private final Set<TurboGrantedAuthority> authorities;
     private boolean accountNonExpired;
-
     private boolean accountNonLocked;
-
     private boolean credentialsNonExpired;
-
     private boolean enabled;
 
     /**
-     * 用户id
+     * user id
      */
+    @Setter
+    @Getter
     private Long userId;
 
     /**
-     * 用户名
+     * user name
      */
+    @Setter
     private String username;
 
     /**
-     * 密码
+     * user password
      */
+    @Setter
     private String password;
 
     /**
-     * 邮箱
+     * nickname
      */
-    private String email;
-
-    /**
-     * 电话号码
-     */
-    private String phone;
-
-    /**
-     * 头像
-     */
-    private String avatar;
-
-    /**
-     * 昵称
-     */
+    @Setter
+    @Getter
     private String nickname;
 
     /**
-     * 租户
+     * whether admin
      */
-    private Long tenantId;
+    @Setter
+    private boolean administrator;
 
-    /**
-     * 组织id
-     */
-    private Long orgId;
+    public TurboUser(Long userId, String username, String password, Set<TurboGrantedAuthority> authorities) {
+        this.userId = userId;
+        this.username = username;
+        this.password = password;
+        this.authorities = authorities;
+    }
 
-    public TurboUser(SysUserVO user) {
-        this.authorities = user.getRoles()
-                .stream()
-                .map(role -> new TurboGrantedAuthority(role.getId(), role.getCode(), role.getName()))
-                .collect(Collectors.toSet());
+    public TurboUser(JwtAuthenticationToken authentication) {
+        this(authentication.getToken());
+    }
+
+    public TurboUser(SysUser user, Set<TurboGrantedAuthority> authorities) {
         UserStatus userStatus = user.getStatus();
         this.accountNonLocked = userStatus != UserStatus.LOCK;
         this.accountNonExpired = true;
@@ -94,38 +85,33 @@ public class TurboUser implements UserDetails {
         this.userId = user.getId();
         this.username = user.getUsername();
         this.password = user.getPassword();
-        this.email = user.getEmail();
-        this.phone = user.getPhone();
-        this.avatar = user.getAvatar();
         this.nickname = user.getNickname();
-        this.tenantId = user.getTenantId();
-        this.orgId = user.getOrgId();
+        // determinate authority has administrator
+        this.authorities = authorities;
+        this.administrator = authorities.stream().anyMatch(authority -> authority.getAuthority().equals(ROLE_OF_ADMINISTRATOR));
     }
 
     public TurboUser(Jwt jwt) {
-        this.accountNonExpired = jwt.getClaimAsBoolean("accountNonExpired");
-        this.accountNonLocked = jwt.getClaimAsBoolean("accountNonLocked");
-        this.credentialsNonExpired = jwt.getClaimAsBoolean("credentialsNonExpired");
-        this.enabled = jwt.getClaimAsBoolean("enabled");
-        this.userId = jwt.getClaim("userId");
-        List<Map<String, Object>> claimAuthorities = jwt.getClaim("authorities");
-        this.authorities = claimAuthorities.stream()
-                .map(auth -> {
-                    MapWrapper wrapper = new MapWrapper(auth);
-                    Long roleId = wrapper.getForce("roleId", Long.class);
-                    String roleCode = wrapper.getForce("roleCode", String.class);
-                    String roleName = wrapper.getForce("roleName", String.class);
-                    return new TurboGrantedAuthority(roleId, roleCode, roleName);
-                })
-                .collect(Collectors.toSet());
-        this.username = jwt.getClaimAsString("username");
-        this.password = jwt.getClaimAsString("password");
-        this.email = jwt.getClaimAsString("email");
-        this.phone = jwt.getClaimAsString("phone");
-        this.avatar = jwt.getClaimAsString("avatar");
-        this.nickname = jwt.getClaimAsString("nickname");
-        this.tenantId = jwt.getClaim("tenantId");
-        this.orgId = jwt.getClaim("orgId");
+        this.accountNonExpired = jwt.getClaimAsBoolean(ACCOUNT_NON_EXPIRED_FIELD);
+        this.accountNonLocked = jwt.getClaimAsBoolean(ACCOUNT_NON_LOCKED_FIELD);
+        this.credentialsNonExpired = jwt.getClaimAsBoolean(CREDENTIALS_NON_EXPIRED_FIELD);
+        this.enabled = jwt.getClaimAsBoolean(ACCOUNT_ENABLED_FIELD);
+        this.userId = jwt.getClaim(USER_ID_FIELD);
+        List<Map<String, Object>> claimAuthorities = jwt.getClaim(AUTHORITIES_FIELD);
+        this.authorities =
+                claimAuthorities.stream()
+                        .map(auth -> {
+                            MapWrapper wrapper = new MapWrapper(auth);
+                            Long roleId = wrapper.getForce(ROLE_ID_FIELD, Long.class);
+                            String roleCode = wrapper.getForce(ROLE_CODE_FIELD, String.class);
+                            String roleName = wrapper.getForce(ROLE_NAME_FIELD, String.class);
+                            return new TurboGrantedAuthority(roleId, roleCode, roleName);
+                        })
+                        .collect(Collectors.toSet());
+        this.username = jwt.getClaimAsString(USERNAME_FIELD);
+        this.password = jwt.getClaimAsString(PASSWORD_FIELD);
+        this.nickname = jwt.getClaimAsString(NICKNAME_FIELD);
+        this.administrator = Optional.ofNullable(jwt.getClaimAsBoolean(ADMINISTRATOR_FIELD)).map(Boolean::booleanValue).orElse(false);
     }
 
     @Override

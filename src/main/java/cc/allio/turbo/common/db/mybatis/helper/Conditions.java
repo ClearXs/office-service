@@ -2,13 +2,13 @@ package cc.allio.turbo.common.db.mybatis.helper;
 
 import cc.allio.turbo.common.constant.Direction;
 import cc.allio.turbo.common.db.entity.Entity;
+import cc.allio.turbo.common.web.params.EntityTerm;
+import cc.allio.turbo.common.web.params.Order;
+import cc.allio.turbo.common.web.params.QueryParam;
+import cc.allio.turbo.common.web.params.Term;
 import cc.allio.uno.core.type.TypeOperator;
 import cc.allio.uno.core.type.TypeOperatorFactory;
 import cc.allio.uno.core.util.CollectionUtils;
-import cc.allio.turbo.common.web.params.EntityTerm;
-import cc.allio.turbo.common.web.params.QueryParam;
-import cc.allio.turbo.common.web.params.Order;
-import cc.allio.turbo.common.web.params.Term;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.ReflectionKit;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;

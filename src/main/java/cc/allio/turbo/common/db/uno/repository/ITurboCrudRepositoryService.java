@@ -397,7 +397,7 @@ public interface ITurboCrudRepositoryService<T extends Entity> extends ITurboCru
      * @param entityClass entityClass
      * @param <T>         实体类型
      * @return SimpleTurboCrudRepositoryServiceImpl
-     * @see cc.allio.turbo.common.db.uno.repository.impl.SimpleTurboCrudRepositoryServiceImpl
+     * @see SimpleTurboCrudRepositoryServiceImpl
      */
     static <T extends Entity> ITurboCrudRepositoryService<T> simply(Class<T> entityClass) {
         return new SimpleTurboCrudRepositoryServiceImpl<>(entityClass);
@@ -410,7 +410,7 @@ public interface ITurboCrudRepositoryService<T extends Entity> extends ITurboCru
      * @param entityClass     entityClass
      * @param <T>             实体类型
      * @return SimpleTurboCrudRepositoryServiceImpl
-     * @see cc.allio.turbo.common.db.uno.repository.impl.SimpleTurboCrudRepositoryServiceImpl
+     * @see SimpleTurboCrudRepositoryServiceImpl
      */
     static <T extends Entity> ITurboCrudRepositoryService<T> simply(AggregateCommandExecutor commandExecutor, Class<T> entityClass) {
         return new SimpleTurboCrudRepositoryServiceImpl<>(commandExecutor, entityClass);

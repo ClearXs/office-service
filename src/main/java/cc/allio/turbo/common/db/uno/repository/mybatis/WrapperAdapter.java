@@ -26,7 +26,7 @@ import reactor.util.function.Tuples;
 import java.util.*;
 
 /**
- * mybatis的{@link com.baomidou.mybatisplus.core.conditions.Wrapper}适配器，
+ * mybatis的{@link Wrapper}适配器，
  * <p>目的是能够通过该对象填充{@link cc.allio.uno.data.orm.dsl.Operator}的数据，以达到适配mybatis-plus ORM API的部分</p>
  *
  * @author j.x

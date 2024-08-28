@@ -3,7 +3,8 @@ package cc.allio.turbo.modules.office.service.impl;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.util.AuthUtil;
 import cc.allio.turbo.modules.auth.provider.TurboUser;
-import cc.allio.turbo.modules.office.documentserver.callbacks.CallbackEventBus;
+import cc.allio.turbo.modules.office.constant.ShareMode;
+import cc.allio.turbo.modules.office.documentserver.callbacks.CallbackBus;
 import cc.allio.turbo.modules.office.documentserver.command.CommandManager;
 import cc.allio.turbo.modules.office.documentserver.command.Result;
 import cc.allio.turbo.modules.office.documentserver.command.ResultCode;
@@ -13,6 +14,7 @@ import cc.allio.turbo.modules.office.documentserver.command.requestinfo.ForceSav
 import cc.allio.turbo.modules.office.documentserver.vo.Track;
 import cc.allio.turbo.modules.office.dto.DocumentDTO;
 import cc.allio.turbo.modules.office.dto.OnlineDocUser;
+import cc.allio.turbo.modules.office.dto.PermissionShareDTO;
 import cc.allio.turbo.modules.office.dto.page.DocPageDTO;
 import cc.allio.turbo.modules.office.entity.Doc;
 import cc.allio.turbo.modules.office.entity.DocCooperator;
@@ -37,6 +39,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -57,11 +60,7 @@ public class DocUserServiceImpl implements IDocUserService {
     private final CommandManager commandManager;
 
     @Override
-    public Boolean favoriteOfDocument(Long docId) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    public Boolean favoriteOfDocument(TurboUser currentUser, Long docId) throws BizException {
         Long userId = currentUser.getUserId();
         return
                 docCustomizationService.update(
@@ -74,11 +73,7 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public Boolean cancelFavoriteOfDocument(Long docId) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    public Boolean cancelFavoriteOfDocument(TurboUser currentUser, Long docId) throws BizException {
         Long userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
@@ -90,11 +85,7 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public Boolean favorOfDocument(Long docId) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    public Boolean favorOfDocument(TurboUser currentUser, Long docId) throws BizException {
         Long userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
@@ -106,11 +97,7 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public Boolean cancelFavorOfDocument(Long docId) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    public Boolean cancelFavorOfDocument(TurboUser currentUser, Long docId) throws BizException {
         Long userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
@@ -122,16 +109,13 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public DocUser getDocUserByRequest(Long docId) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    @Transactional
+    public DocUser getDocUserByCurrentUser(TurboUser currentUser, Long docId) throws BizException {
         Long userId = currentUser.getUserId();
-        String userName = currentUser.getNickname();
+        String userName = currentUser.getUsername();
 
         DocUser docUser = new DocUser();
-        docUser.setUserId(userId);
+        docUser.setUserId(Long.toString(userId));
         docUser.setUsername(userName);
         Doc doc = docService.getById(docId);
         if (doc == null) {
@@ -160,20 +144,48 @@ public class DocUserServiceImpl implements IDocUserService {
             docUser.setPermission(permission);
             docUser.setPermissionGroup(permissionGroup);
         }
-        DocCustomization docCustomization = docCustomizationService.selectOneByDocIdAndUserId(docId, userId);
-        if (docCustomization == null) {
-            docCustomization = docCustomizationService.settingToFavorite(docId, userId, false);
+        DocCustomization customization = docCustomizationService.selectOneByDocIdAndUserId(docId, userId);
+        if (customization == null) {
+            customization = docCustomizationService.settingToFavorite(docId, userId, false);
         }
-        docUser.setDocCustomization(docCustomization);
+        docUser.setCustomization(customization);
         return docUser;
     }
 
     @Override
-    public List<DocumentDTO> searchMineDocument(String pattern) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
+    @Transactional
+    public DocUser getDocUserByShare(PermissionShareDTO share) throws BizException {
+        DocUser docUser = new DocUser();
+        Long docId = share.getDocId();
+        Doc doc = docService.getById(docId);
+        docUser.setDoc(doc);
+        // judgement share document whether anyone visit
+        ShareMode mode = share.getMode();
+        Long permissionGroupId = share.getPermissionGroupId();
+        DocPermissionGroup permissionGroup = permissionGroupService.getById(permissionGroupId);
+        // share mode visit document
+        mode.visit(share, docUser);
+        if (permissionGroup != null) {
+            String permissionJson = permissionGroup.getPermission();
+            DocPermission permission = JsonUtils.parse(permissionJson, DocPermission.class);
+            docUser.setPermission(permission);
+            docUser.setPermissionGroup(permissionGroup);
         }
+        if (ShareMode.ANYONE == mode && !AuthUtil.hasAuthentication()) {
+            return docUser;
+        }
+        // set doc user customization
+        String userId = docUser.getUserId();
+        DocCustomization customization = docCustomizationService.selectOneByDocIdAndUserId(docId, Long.parseLong(userId));
+        if (customization == null) {
+            customization = docCustomizationService.settingToFavorite(docId, Long.parseLong(userId), false);
+        }
+        docUser.setCustomization(customization);
+        return docUser;
+    }
+
+    @Override
+    public List<DocumentDTO> searchMineDocument(TurboUser currentUser, String pattern) throws BizException {
         DocPageDTO docPageDTO = new DocPageDTO();
         docPageDTO.setCreator(currentUser.getUserId());
         docPageDTO.setCollaborator(currentUser.getUserId());
@@ -187,35 +199,35 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public IPage<DocumentDTO> selectRecentlyDocument(DocPageDTO params) throws BizException {
-        return selectUserDocument(params);
+    public IPage<DocumentDTO> selectRecentlyDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
+        return selectUserDocument(currentUser, params);
     }
 
     @Override
-    public IPage<DocumentDTO> selectShareToMeDocument(DocPageDTO params) throws BizException {
+    public IPage<DocumentDTO> selectShareToMeDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
         params.setShared(true);
-        return selectUserDocument(params);
+        return selectUserDocument(currentUser, params);
     }
 
     @Override
-    public IPage<DocumentDTO> selectMineFavoriteDocument(DocPageDTO params) throws BizException {
+    public IPage<DocumentDTO> selectMineFavoriteDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
         params.setFavorite(true);
-        return selectUserDocument(params);
+        return selectUserDocument(currentUser, params);
     }
 
     @Override
-    public IPage<DocumentDTO> selectMineCreateDocument(DocPageDTO params) throws BizException {
-        return selectUserDocument(params);
+    public IPage<DocumentDTO> selectMineCreateDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
+        return selectUserDocument(currentUser, params);
     }
 
     @Override
-    public IPage<DocumentDTO> selectMineFavorDocument(DocPageDTO params) throws BizException {
+    public IPage<DocumentDTO> selectMineFavorDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
         params.setFavor(true);
-        return selectUserDocument(params);
+        return selectUserDocument(currentUser, params);
     }
 
     @Override
-    public List<OnlineDocUser> getOnlineDocUser(Long docId) throws BizException {
+    public List<OnlineDocUser> getOnlineDocUser(TurboUser currentUser, Long docId) throws BizException {
         Doc doc = docService.getById(docId);
         if (doc == null) {
             throw new BizException("not found document");
@@ -237,7 +249,7 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public Boolean kickoutOthres(Long docId) throws BizException {
+    public Boolean kickoutOthres(TurboUser currentUser, Long docId) throws BizException {
         Doc doc = docService.getById(docId);
         if (doc == null) {
             throw new BizException("not found document");
@@ -245,10 +257,6 @@ public class DocUserServiceImpl implements IDocUserService {
         String docKey = doc.getKey();
         List<OnlineDocUser> onlineDocUser = getOnlineUserFromCommand(docKey);
         List<String> users = onlineDocUser.stream().map(OnlineDocUser::getUserId).map(String::valueOf).toList();
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
         Collection<String> otherUsers = CollectionUtils.complement(users, Lists.newArrayList(currentUser.getUserId().toString()));
         return dropUsers(docKey, Lists.newArrayList(otherUsers));
     }
@@ -272,7 +280,7 @@ public class DocUserServiceImpl implements IDocUserService {
      * @return the {@link OnlineDocUser} user list
      */
     List<OnlineDocUser> getOnlineUserFromCommand(String docKey) {
-        CallbackEventBus.Subscriber subscribe = CallbackEventBus.subscribe();
+        CallbackBus.Subscriber subscribe = CallbackBus.subscribe();
         Result result = commandManager.info().execute(docKey, EmptyArgs.identifier);
         ResultCode code = result.getCode();
         if (code == ResultCode.noError) {
@@ -305,7 +313,7 @@ public class DocUserServiceImpl implements IDocUserService {
                     })
                     .toList();
         } else {
-            CallbackEventBus.remove(subscribe);
+            CallbackBus.remove(subscribe);
         }
         return Collections.emptyList();
     }
@@ -325,16 +333,12 @@ public class DocUserServiceImpl implements IDocUserService {
     }
 
     @Override
-    public Boolean forceSave(Long docId) throws BizException {
+    public Boolean forceSave(TurboUser currentUser, Long docId) throws BizException {
         Doc doc = docService.getById(docId);
         if (doc == null) {
             throw new BizException("not found document");
         }
         kickoutAll(docId);
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
         Long id = currentUser.getUserId();
         ForceSaveArgs args = ForceSaveArgs.builder().userdata(id.toString()).build();
         Result result = commandManager.forceSave().execute(doc.getKey(), args);
@@ -344,15 +348,12 @@ public class DocUserServiceImpl implements IDocUserService {
     /**
      * select mine document
      *
-     * @param params the {@link DocPageDTO} instance
+     * @param currentUser
+     * @param params      the {@link DocPageDTO} instance
      * @return the {@link DocumentDTO} list
      */
     @Override
-    public IPage<DocumentDTO> selectUserDocument(DocPageDTO params) throws BizException {
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new BizException("current user not exist");
-        }
+    public IPage<DocumentDTO> selectUserDocument(TurboUser currentUser, DocPageDTO params) throws BizException {
         params.setCreator(currentUser.getUserId());
         params.setCollaborator(currentUser.getUserId());
         IPage<DocVO> docPageList = docUserMapper.selectUserDocList(params);
@@ -390,7 +391,6 @@ public class DocUserServiceImpl implements IDocUserService {
                     sysUserService.list(Wrappers.<SysUser>lambdaQuery().in(SysUser::getId, userIdList));
             idKeyUser = orgUserModels.stream().collect(Collectors.toMap(SysUser::getId, k -> k));
         }
-
         Map<Long, SysUser> finalIdKeyUser = idKeyUser;
         return records.stream()
                 .map(doc -> {
@@ -414,5 +414,4 @@ public class DocUserServiceImpl implements IDocUserService {
                 })
                 .toList();
     }
-
 }

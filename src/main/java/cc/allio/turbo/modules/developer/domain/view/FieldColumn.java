@@ -3,7 +3,6 @@ package cc.allio.turbo.modules.developer.domain.view;
 import cc.allio.turbo.common.db.entity.MapEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.checkerframework.checker.units.qual.C;
 
 /**
  * 视图数据字段列定义

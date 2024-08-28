@@ -47,14 +47,14 @@ public abstract class TurboController {
     }
 
     /**
-     * {@link org.springframework.http.HttpStatus#UNAUTHORIZED}
+     * {@link HttpStatus#UNAUTHORIZED}
      */
     public <T> R<T> authorize() {
         return R.of(HttpStatus.UNAUTHORIZED.value(), null, HttpStatus.UNAUTHORIZED.name(), null);
     }
 
     /**
-     * {@link org.springframework.http.HttpStatus#UNAUTHORIZED}
+     * {@link HttpStatus#UNAUTHORIZED}
      */
     public <T> R<T> authorize(Throwable ex) {
         return R.of(HttpStatus.UNAUTHORIZED.value(), null, HttpStatus.UNAUTHORIZED.name(), ex);

@@ -1,7 +1,7 @@
 package cc.allio.turbo.common.db.mybatis.injetor.methods;
 
-import cc.allio.turbo.common.db.mybatis.mapper.TreeMapper;
 import cc.allio.turbo.common.db.entity.TreeEntity;
+import cc.allio.turbo.common.db.mybatis.mapper.TreeMapper;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.injector.AbstractMethod;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;

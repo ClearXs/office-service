@@ -1,8 +1,10 @@
 package cc.allio.turbo.modules.office.service;
 
 import cc.allio.turbo.common.exception.BizException;
+import cc.allio.turbo.modules.auth.provider.TurboUser;
 import cc.allio.turbo.modules.office.dto.DocumentDTO;
 import cc.allio.turbo.modules.office.dto.OnlineDocUser;
+import cc.allio.turbo.modules.office.dto.PermissionShareDTO;
 import cc.allio.turbo.modules.office.dto.page.DocPageDTO;
 import cc.allio.turbo.modules.office.vo.DocUser;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -24,102 +26,123 @@ public interface IDocUserService {
      * @param docId the document id
      * @return success if true
      */
-    Boolean favoriteOfDocument(Long docId) throws BizException;
+    Boolean favoriteOfDocument(TurboUser currentUser, Long docId) throws BizException;
 
     /**
      * cancel collect specifies document
      *
-     * @param docId the document id
+     * @param currentUser
+     * @param docId       the document id
      * @return success if true
      */
-    Boolean cancelFavoriteOfDocument(Long docId) throws BizException;
+    Boolean cancelFavoriteOfDocument(TurboUser currentUser, Long docId) throws BizException;
 
     /**
      * favor specifies document
      *
-     * @param docId the document id
+     * @param currentUser
+     * @param docId       the document id
      * @return success if true
      */
-    Boolean favorOfDocument(Long docId) throws BizException;
+    Boolean favorOfDocument(TurboUser currentUser, Long docId) throws BizException;
 
     /**
      * cancel favor specifies document
      *
-     * @param docId the document id
+     * @param currentUser
+     * @param docId       the document id
      * @return success if true
      */
-    Boolean cancelFavorOfDocument(Long docId) throws BizException;
+    Boolean cancelFavorOfDocument(TurboUser currentUser, Long docId) throws BizException;
 
     /**
-     * 从请求中获取{@link DocUser}
+     * 从请求中的当前用户获取{@link DocUser}
      *
+     * @param currentUser
+     * @param docId       the document id
      * @return the {@link DocUser} instance
      */
-    DocUser getDocUserByRequest(Long docId) throws BizException;
+    DocUser getDocUserByCurrentUser(TurboUser currentUser, Long docId) throws BizException;
+
+    /**
+     * from shared document get {@link DocUser} instance
+     *
+     * @param share the {@link PermissionShareDTO} instance
+     * @return the {@link DocUser} instance
+     */
+    DocUser getDocUserByShare(PermissionShareDTO share) throws BizException;
 
     /**
      * according document name or creator name
      *
-     * @param pattern the match pattern
+     * @param currentUser
+     * @param pattern     the match pattern
      * @return list of {@link DocumentDTO}
      */
-    List<DocumentDTO> searchMineDocument(String pattern) throws BizException;
+    List<DocumentDTO> searchMineDocument(TurboUser currentUser, String pattern) throws BizException;
 
     /**
      * select user document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectUserDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectUserDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * select recently document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectRecentlyDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectRecentlyDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * select share to me document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectShareToMeDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectShareToMeDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * select mien favorite document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectMineFavoriteDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectMineFavoriteDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * select mine create document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectMineCreateDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectMineCreateDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * select mien favor document list
      *
-     * @param params the filter conditional
+     * @param currentUser
+     * @param params      the filter conditional
      * @return the {@link DocumentDTO}
      */
-    IPage<DocumentDTO> selectMineFavorDocument(DocPageDTO params) throws BizException;
+    IPage<DocumentDTO> selectMineFavorDocument(TurboUser currentUser, DocPageDTO params) throws BizException;
 
     /**
      * get online doc user
      *
-     * @param docId the doc user
+     * @param currentUser
+     * @param docId       the doc user
      * @return {@link OnlineDocUser} list
      */
-    List<OnlineDocUser> getOnlineDocUser(Long docId) throws BizException;
+    List<OnlineDocUser> getOnlineDocUser(TurboUser currentUser, Long docId) throws BizException;
 
     /**
      * kickout specifies document from user ids list
@@ -133,10 +156,11 @@ public interface IDocUserService {
     /**
      * kickout other users and without creator
      *
-     * @param docId the doc id
+     * @param currentUser
+     * @param docId       the doc id
      * @return success if true
      */
-    Boolean kickoutOthres(Long docId) throws BizException;
+    Boolean kickoutOthres(TurboUser currentUser, Long docId) throws BizException;
 
     /**
      * kickout specifies all user
@@ -149,8 +173,9 @@ public interface IDocUserService {
     /**
      * force save specifies document
      *
-     * @param docId the doc id
+     * @param currentUser
+     * @param docId       the doc id
      * @return success if true
      */
-    Boolean forceSave(Long docId) throws BizException;
+    Boolean forceSave(TurboUser currentUser, Long docId) throws BizException;
 }

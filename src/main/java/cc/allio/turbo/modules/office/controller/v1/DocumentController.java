@@ -7,9 +7,11 @@ import cc.allio.turbo.extension.oss.OssProperties;
 import cc.allio.turbo.extension.oss.OssResponse;
 import cc.allio.turbo.extension.oss.Path;
 import cc.allio.turbo.extension.oss.request.OssGetRequest;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.auth.provider.TurboUser;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import cc.allio.turbo.modules.office.documentserver.vo.Rename;
 import cc.allio.turbo.modules.office.dto.DocumentCreateDTO;
+import cc.allio.turbo.modules.office.dto.ShareDTO;
 import cc.allio.turbo.modules.office.entity.Doc;
 import cc.allio.turbo.modules.office.service.IDocService;
 import cc.allio.turbo.modules.office.service.IDocUserService;
@@ -51,14 +53,14 @@ public class DocumentController {
     @PostMapping("/saves")
     @Operation(summary = "保存文档")
     public R<Doc> saves(@RequestBody MultipartFile file) throws BizException, IOException {
-        Doc doc = this.docService.saves(file);
+        Doc doc = docService.saves(file);
         return R.ok(doc);
     }
 
     @GetMapping("/forceSave/{docId}")
     @Operation(summary = "强制保存")
-    public R<Boolean> forceSave(@PathVariable("docId") @NotNull Long docId) throws BizException {
-        Boolean success = docUserService.forceSave(docId);
+    public R<Boolean> forceSave(@Valid @NotNull TurboUser currentUser, @PathVariable("docId") @NotNull Long docId) throws BizException {
+        Boolean success = docUserService.forceSave(currentUser, docId);
         return R.ok(success);
     }
 
@@ -76,10 +78,11 @@ public class DocumentController {
         return R.ok(success);
     }
 
-    @GetMapping(value = "/shard/{docId}")
+    @PostMapping(value = "/shard")
     @Operation(summary = "分享文档")
-    public R<String> share(@PathVariable("docId") @NotNull Long docId) {
-        return R.ok();
+    public R<String> share(@NotNull ShareDTO shareDTO) throws BizException {
+        String cacheKey = docService.share(shareDTO);
+        return R.ok(cacheKey);
     }
 
     @GetMapping("/getDocumentById/{docId}")
@@ -96,13 +99,13 @@ public class DocumentController {
         if (doc == null) {
             throw new BizException("not found document");
         }
-        DocumentDescriptor documentDescriptor = new DocumentDescriptor(doc);
-        SysAttachment documentAttachment = documentDescriptor.obtainAttachment();
+        DocDescriptor docDescriptor = new DocDescriptor(doc);
+        SysAttachment documentAttachment = docDescriptor.obtainAttachment();
         if (documentAttachment == null) {
             throw new BizException("not found document");
         }
         response.setHeader("Content-Disposition",
-                "attachment;filename=" + URLEncoder.encode(documentDescriptor.getFullname(), StandardCharsets.UTF_8));
+                "attachment;filename=" + URLEncoder.encode(docDescriptor.getFullname(), StandardCharsets.UTF_8));
         response.setContentType("application/force-download");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         String filepath = documentAttachment.getFilepath();
@@ -122,12 +125,12 @@ public class DocumentController {
         String zipPath = "output.zip";
         ZipBuilder zipBuilder = ZipBuilder.createZipFile(new File(zipPath));
         for (Doc doc : docs) {
-            DocumentDescriptor documentDescriptor = new DocumentDescriptor(doc);
-            SysAttachment documentAttachment = documentDescriptor.obtainAttachment();
+            DocDescriptor docDescriptor = new DocDescriptor(doc);
+            SysAttachment documentAttachment = docDescriptor.obtainAttachment();
             if (documentAttachment == null) {
                 continue;
             }
-            String fullname = documentDescriptor.getFullname();
+            String fullname = docDescriptor.getFullname();
             String filepath = documentAttachment.getFilepath();
             OssGetRequest request = OssGetRequest.builder().path(Path.from(filepath)).build();
             OssResponse ossResponse = OssExecutorFactory.getCurrent().download(request, new OssProperties());

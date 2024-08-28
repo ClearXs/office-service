@@ -1,7 +1,7 @@
 package cc.allio.turbo.modules.office.documentserver.util.file;
 
 import cc.allio.turbo.modules.office.documentserver.models.enums.DocumentType;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -185,6 +185,6 @@ public class DefaultFileUtility implements FileUtility, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        DocumentDescriptor.fileUtility = this;
+        DocDescriptor.fileUtility = this;
     }
 }

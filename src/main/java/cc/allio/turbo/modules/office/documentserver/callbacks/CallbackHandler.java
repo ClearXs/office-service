@@ -53,6 +53,8 @@ public class CallbackHandler {
 
         // trigger doc changes
         changesExecutorService.submit(triggerDocChanges(docId, body.getActions()));
+
+        // get specifies status
         Callback callback = callbackHandlers.get(status);
         if (callback == null) {
             log.warn("Callback status {} is not supported yet", body.getStatus());
@@ -60,7 +62,7 @@ public class CallbackHandler {
         }
 
         // publish to even bus
-        CallbackEventBus.publish(body);
+        CallbackBus.publish(body);
 
         return callback.handle(docId, fileId, fileName, body);
     }
@@ -73,15 +75,16 @@ public class CallbackHandler {
      */
     Runnable triggerDocChanges(Long docId, List<Action> actions) {
         return () -> {
-            List<DocChanges> docChangesList = actions.stream()
-                    .map(action -> {
-                        DocChanges docChanges = new DocChanges();
-                        docChanges.setUserId(Long.parseLong(action.getUserid()));
-                        docChanges.setAction(action.getType().name());
-                        docChanges.setDocId(docId);
-                        return docChanges;
-                    })
-                    .collect(Collectors.toList());
+            List<DocChanges> docChangesList =
+                    actions.stream()
+                            .map(action -> {
+                                DocChanges docChanges = new DocChanges();
+                                docChanges.setUserId(Long.parseLong(action.getUserid()));
+                                docChanges.setAction(action.getType().name());
+                                docChanges.setDocId(docId);
+                                return docChanges;
+                            })
+                            .toList();
             docChangesService.saveBatch(docChangesList);
         };
     }

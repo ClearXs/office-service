@@ -5,7 +5,6 @@ import cc.allio.turbo.common.aop.TurboAdvisorBuilder;
 import cc.allio.turbo.common.db.uno.repository.ITurboCrudTreeRepositoryService;
 import cc.allio.turbo.common.getter.ApplicationContextGetter;
 import cc.allio.turbo.modules.developer.api.DomainObject;
-import cc.allio.turbo.modules.developer.domain.BoSchema;
 import cc.allio.uno.core.api.OptionalContext;
 import cc.allio.uno.core.function.lambda.*;
 import com.google.common.collect.Queues;

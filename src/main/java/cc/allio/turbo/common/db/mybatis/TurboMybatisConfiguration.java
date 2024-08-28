@@ -1,12 +1,12 @@
 package cc.allio.turbo.common.db.mybatis;
 
+import cc.allio.turbo.common.db.id.SnowflakeIdentifierGenerator;
 import cc.allio.turbo.common.db.mybatis.handle.BaseChangeMetaObjectHandler;
 import cc.allio.turbo.common.db.mybatis.injetor.TurboSqlInjector;
 import cc.allio.turbo.common.db.mybatis.plugins.inner.ConstraintInnerInterceptor;
 import cc.allio.turbo.common.db.mybatis.plugins.inner.SortableInnerInterceptor;
 import cc.allio.turbo.common.db.mybatis.plugins.inner.TurboTenantLineHandler;
 import cc.allio.turbo.common.db.persistent.PersistentProperties;
-import cc.allio.turbo.common.db.id.SnowflakeIdentifierGenerator;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;

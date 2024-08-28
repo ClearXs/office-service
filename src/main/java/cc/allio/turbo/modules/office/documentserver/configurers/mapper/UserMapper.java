@@ -19,7 +19,7 @@ public class UserMapper implements Mapper<DefaultFileWrapper, User> {
         User user = new User();
         DocUser docUser = wrapper.getUser();
         DocPermissionGroup permissionGroup = docUser.getPermissionGroup();
-        user.setId(docUser.getUserId().toString());
+        user.setId(docUser.getUserId());
         user.setName(docUser.getUsername());
         user.setGroup(permissionGroup.getGroupCode());
         return user;

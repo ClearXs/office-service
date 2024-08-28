@@ -1,7 +1,10 @@
 package cc.allio.turbo.modules.message.runtime;
 
 import cc.allio.turbo.common.util.AuthUtil;
-import cc.allio.turbo.modules.message.config.*;
+import cc.allio.turbo.modules.message.config.DefaultMessageConfig;
+import cc.allio.turbo.modules.message.config.MessageConfig;
+import cc.allio.turbo.modules.message.config.SendTarget;
+import cc.allio.turbo.modules.message.config.Template;
 import cc.allio.turbo.modules.message.constant.SendStatus;
 import cc.allio.turbo.modules.message.constant.Source;
 import cc.allio.turbo.modules.message.constant.Status;
@@ -115,7 +118,7 @@ public class MessageCollector implements SourceCollector<ReceiveMetadata> {
                                         sysMessage.setMessageStatus(Status.UNREAD);
                                         sysMessage.setMessageSource(Source.SYSTEM);
                                         // 发送人、接收人
-                                        sysMessage.setSendUser(AuthUtil.getCurrentUserId());
+                                        sysMessage.setSendUser(AuthUtil.getUserId());
                                         sysMessage.setSendTime(DateUtil.parse(String.valueOf(variables
                                                 .getOrDefault("sendTime", DateUtil.format(DateUtil.now(), DateUtil.PATTERN_DATETIME))), DateUtil.PATTERN_DATETIME));
                                         sysMessage.setReceiver(target);

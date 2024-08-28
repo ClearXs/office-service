@@ -1,11 +1,11 @@
 package cc.allio.turbo.modules.auth.provider;
 
+import cc.allio.turbo.common.util.WebUtil;
 import cc.allio.turbo.modules.auth.authentication.TurboJwtAuthenticationToken;
+import cc.allio.turbo.modules.auth.jwt.JwtAuthentication;
 import cc.allio.turbo.modules.auth.params.*;
 import cc.allio.uno.core.util.IoUtils;
 import cc.allio.uno.core.util.JsonUtils;
-import cc.allio.turbo.common.util.JwtUtil;
-import cc.allio.turbo.common.util.WebUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -40,9 +40,14 @@ public class TurboJwtAuthenticationProvider extends DaoAuthenticationProvider {
 
     private static final String LOGIN_PATH = "/auth/login";
 
-    public TurboJwtAuthenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    private final JwtAuthentication jwtAuthentication;
+
+    public TurboJwtAuthenticationProvider(UserDetailsService userDetailsService,
+                                          PasswordEncoder passwordEncoder,
+                                          JwtAuthentication jwtAuthentication) {
         setUserDetailsService(userDetailsService);
         setPasswordEncoder(passwordEncoder);
+        this.jwtAuthentication = jwtAuthentication;
     }
 
     @Override
@@ -77,14 +82,14 @@ public class TurboJwtAuthenticationProvider extends DaoAuthenticationProvider {
 
     @Override
     protected Authentication createSuccessAuthentication(Object principal, Authentication authentication, UserDetails user) {
-        return JwtUtil.encode((TurboUser) user);
+        return jwtAuthentication.encode((TurboUser) user);
     }
 
     /**
      * 判断当前的请求是否可以进行登陆
      * <ol>
      *     <li>判断http method是否为Post</li>
-     *     <li>判断{@link org.springframework.http.HttpHeaders#CONTENT_TYPE}是否为{@link org.springframework.http.MediaType#APPLICATION_JSON}</li>
+     *     <li>判断{@link HttpHeaders#CONTENT_TYPE}是否为{@link MediaType#APPLICATION_JSON}</li>
      *     <li>判断请求地址是否为/auth/login</li>
      * </ol>
      *

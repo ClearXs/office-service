@@ -212,6 +212,7 @@ public final class DomainServiceRegistryImpl implements DomainServiceRegistry, S
             generalDomainService = registerDirectly(boKey);
         }
         DeclareDomainCrudTreeRepositoryServiceImpl<T> declareDomainRepository = new DeclareDomainCrudTreeRepositoryServiceImpl<>(generalDomainService, domainObjectClass);
+        declareDomainRepository.setDomainEventBus(domainEventBus);
         IDomainService<T> aopifyDomainService = aopify(declareDomainRepository, DeclareDomainCrudTreeRepositoryServiceImpl.class);
         return registerDeclarative(boKey, domainObjectClass, aopifyDomainService);
     }
@@ -277,6 +278,7 @@ public final class DomainServiceRegistryImpl implements DomainServiceRegistry, S
         Supplier<S> defaultCreator =
                 () -> {
                     DeclareDomainCrudTreeRepositoryServiceImpl<T> declareDomainRepository = new DeclareDomainCrudTreeRepositoryServiceImpl<>(generalDomainService, domainObjectClass);
+                    declareDomainRepository.setDomainEventBus(domainEventBus);
                     IDomainService<T> aopifyDomainService = aopify(declareDomainRepository, domainServiceClass);
                     return (S) aopifyDomainService;
                 };
@@ -461,7 +463,7 @@ public final class DomainServiceRegistryImpl implements DomainServiceRegistry, S
     /**
      * <b>使得{@link IDomainService}进行AOP化</b>
      * <p>基于Aop创建{@link IDomainService}，该Aop将会拦截所有领域方法。</p>
-     * <p>每一个领域方法将会附加上基于{@link cc.allio.uno.core.concurrent.LockContext}锁的领域动作</p>
+     * <p>每一个领域方法将会附加上基于{@link LockContext}锁的领域动作</p>
      * <p>LockContext将会执行的动作有</p>
      * <ul>
      *     <li>{@link cc.allio.turbo.modules.developer.entity.DomainEntityTableResolver}的表名解析</li>

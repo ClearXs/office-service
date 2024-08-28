@@ -1,12 +1,12 @@
 package cc.allio.turbo.modules.system.service;
 
-import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.db.mybatis.service.ITurboCrudService;
+import cc.allio.turbo.common.exception.BizException;
+import cc.allio.turbo.modules.system.domain.SysUserVO;
 import cc.allio.turbo.modules.system.dto.BindingOrgDTO;
 import cc.allio.turbo.modules.system.dto.BindingPostDTO;
 import cc.allio.turbo.modules.system.dto.BindingRoleDTO;
 import cc.allio.turbo.modules.system.entity.SysUser;
-import cc.allio.turbo.modules.system.domain.SysUserVO;
 
 public interface ISysUserService extends ITurboCrudService<SysUser> {
 
@@ -31,6 +31,14 @@ public interface ISysUserService extends ITurboCrudService<SysUser> {
      * @return a {@link SysUserVO} instance
      */
     SysUserVO findUserDetails(SysUser sysUser);
+
+    /**
+     * find third user by third user id
+     *
+     * @param thirdUserId the third user id
+     * @return the {@link SysUserVO} instance or null
+     */
+    SysUserVO findThirdUserDetails(String thirdUserId);
 
     /**
      * 用户绑定角色

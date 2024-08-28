@@ -1,6 +1,7 @@
 package cc.allio.turbo.modules.developer.controller;
 
 import cc.allio.turbo.common.constant.Direction;
+import cc.allio.turbo.common.db.constant.FieldType;
 import cc.allio.turbo.common.db.mybatis.helper.Conditions;
 import cc.allio.turbo.common.domain.TreeDomain;
 import cc.allio.turbo.common.exception.BizException;
@@ -8,7 +9,6 @@ import cc.allio.turbo.common.web.R;
 import cc.allio.turbo.common.web.params.EntityTerm;
 import cc.allio.turbo.common.web.params.QueryParam;
 import cc.allio.turbo.modules.developer.api.GeneralDomainObject;
-import cc.allio.turbo.common.db.constant.FieldType;
 import cc.allio.turbo.modules.developer.domain.BoAttrSchema;
 import cc.allio.turbo.modules.developer.domain.BoSchema;
 import cc.allio.turbo.modules.developer.service.IBoDomainService;

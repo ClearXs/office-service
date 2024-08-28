@@ -2,7 +2,7 @@ package cc.allio.turbo.modules.office.documentserver.configurers.wrappers;
 
 import cc.allio.turbo.modules.office.documentserver.models.enums.Action;
 import cc.allio.turbo.modules.office.documentserver.models.enums.Type;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import cc.allio.turbo.modules.office.vo.DocUser;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import lombok.Setter;
 @Builder
 @Setter
 public class DefaultFileWrapper {
-    private DocumentDescriptor doc;
+    private DocDescriptor doc;
     private Long fileId;
     private String filepath;
     private String filename;

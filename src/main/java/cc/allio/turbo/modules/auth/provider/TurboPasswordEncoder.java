@@ -1,8 +1,8 @@
 package cc.allio.turbo.modules.auth.provider;
 
+import cc.allio.turbo.common.util.SecureUtil;
 import cc.allio.turbo.modules.auth.properties.SecureProperties;
 import cc.allio.uno.core.util.StringUtils;
-import cc.allio.turbo.common.util.SecureUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;

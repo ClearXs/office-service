@@ -54,7 +54,7 @@ public interface ICache extends Cache, CacheName {
      * @param time     time
      * @param timeUnit timeUnit
      */
-    default void setEx(String key, Cache.ValueWrapper value, long time, TimeUnit timeUnit) {
+    default void setEx(String key, ValueWrapper value, long time, TimeUnit timeUnit) {
         Optional.ofNullable(obtainCache()).ifPresent(cache -> cache.setEx(key, value, time, timeUnit));
     }
 
@@ -100,7 +100,7 @@ public interface ICache extends Cache, CacheName {
     }
 
     @Override
-    default Cache.ValueWrapper get(Object key) {
+    default ValueWrapper get(Object key) {
         return Optional.ofNullable(obtainCache()).map(cache -> cache.get(key)).orElse(null);
     }
 

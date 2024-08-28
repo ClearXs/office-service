@@ -3,11 +3,8 @@ package cc.allio.turbo.modules.message.runtime;
 import cc.allio.uno.core.metadata.convert.Converter;
 import cc.allio.uno.core.metadata.convert.ConverterFactory;
 import cc.allio.uno.core.metadata.endpoint.source.SourceConverter;
-import cc.allio.uno.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.context.ApplicationContext;
-
-import java.util.Map;
 
 /**
  * 消息源转换器

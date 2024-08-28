@@ -1,7 +1,8 @@
 package cc.allio.turbo.modules.developer.service.impl;
 
 import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
-import cc.allio.turbo.extension.swift.*;
+import cc.allio.turbo.extension.swift.Sequential;
+import cc.allio.turbo.extension.swift.Swift;
 import cc.allio.turbo.modules.developer.entity.DevSequence;
 import cc.allio.turbo.modules.developer.mapper.DevSequenceMapper;
 import cc.allio.turbo.modules.developer.service.IDevSequenceService;

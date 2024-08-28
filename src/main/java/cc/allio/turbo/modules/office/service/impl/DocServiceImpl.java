@@ -4,10 +4,14 @@ import cc.allio.turbo.common.db.entity.IdEntity;
 import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.util.AuthUtil;
+import cc.allio.turbo.common.util.RedisUtil;
+import cc.allio.turbo.common.util.SecureUtil;
 import cc.allio.turbo.extension.oss.*;
 import cc.allio.turbo.extension.oss.request.OssPutRequest;
 import cc.allio.turbo.modules.auth.provider.TurboUser;
 import cc.allio.turbo.modules.office.constant.DocType;
+import cc.allio.turbo.modules.office.constant.ShareExpired;
+import cc.allio.turbo.modules.office.constant.ShareMode;
 import cc.allio.turbo.modules.office.documentserver.command.CommandManager;
 import cc.allio.turbo.modules.office.documentserver.command.Result;
 import cc.allio.turbo.modules.office.documentserver.command.ResultCode;
@@ -16,17 +20,17 @@ import cc.allio.turbo.modules.office.documentserver.managers.document.DocumentMa
 import cc.allio.turbo.modules.office.documentserver.managers.jwt.JwtManager;
 import cc.allio.turbo.modules.office.documentserver.models.filemodel.User;
 import cc.allio.turbo.modules.office.documentserver.storage.FileStorageMutator;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import cc.allio.turbo.modules.office.documentserver.util.file.FileUtility;
 import cc.allio.turbo.modules.office.documentserver.util.service.ServiceConverter;
 import cc.allio.turbo.modules.office.documentserver.vo.*;
 import cc.allio.turbo.modules.office.dto.DocumentCreateDTO;
-import cc.allio.turbo.modules.office.entity.Doc;
-import cc.allio.turbo.modules.office.entity.DocCooperator;
-import cc.allio.turbo.modules.office.entity.DocHistory;
-import cc.allio.turbo.modules.office.entity.DocHistoryUser;
+import cc.allio.turbo.modules.office.dto.PermissionShareDTO;
+import cc.allio.turbo.modules.office.dto.ShareDTO;
+import cc.allio.turbo.modules.office.entity.*;
 import cc.allio.turbo.modules.office.mapper.DocMapper;
 import cc.allio.turbo.modules.office.service.*;
+import cc.allio.turbo.modules.office.vo.DocPermission;
 import cc.allio.turbo.modules.system.entity.SysAttachment;
 import cc.allio.turbo.modules.system.entity.SysUser;
 import cc.allio.turbo.modules.system.service.ISysAttachmentService;
@@ -48,6 +52,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -106,7 +111,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         // set type
         String type = doc.getType();
         if (StringUtils.isEmpty(type)) {
-            String documentTYpe = DocumentDescriptor.obtainTypeFromFile(doc);
+            String documentTYpe = DocDescriptor.obtainTypeFromFile(doc);
             doc.setType(documentTYpe);
         }
         // generate new version
@@ -114,13 +119,11 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         // set new doc
         doc.setKey(docKey);
         // set new version
-        Integer version = DocumentDescriptor.trimToVersion(docKey);
+        Integer version = DocDescriptor.trimToVersion(docKey);
         doc.setDocVersion(version);
         // set creator
-        TurboUser documentCreator = AuthUtil.getCurrentUser();
-        if (documentCreator != null) {
-            doc.setCreator(documentCreator.getUserId());
-        }
+        Long userId = AuthUtil.getUserId();
+        doc.setCreator(userId);
         boolean insert = super.save(doc);
         if (insert) {
             permissionGroupService.settingDocPermissionGroup(doc.getId());
@@ -131,10 +134,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             docHistory.setDocTitle(doc.getTitle());
             docHistory.setDocType(doc.getType());
             docHistory.setDocVersion(1);
-            if (documentCreator != null) {
-                docHistory.setMaintainUserId(documentCreator.getUserId());
-                docHistory.setMaintainUsername(documentCreator.getNickname());
-            }
+            docHistory.setMaintainUserId(userId);
+            String username = AuthUtil.getUsername();
+            docHistory.setMaintainUsername(username);
             docHistory.setFile(doc.getFile());
             docHistoryService.save(docHistory);
         }
@@ -232,10 +234,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
     Doc onNewlyDocument(Doc waitForDoc) throws BizException {
         boolean insert = save(waitForDoc);
         if (insert) {
-            DocumentDescriptor documentDescriptor = new DocumentDescriptor(waitForDoc);
-            Long docId = documentDescriptor.getDocId();
-            String fullname = documentDescriptor.getFullname();
-            String docKey = documentDescriptor.getDocKey();
+            DocDescriptor docDescriptor = new DocDescriptor(waitForDoc);
+            Long docId = docDescriptor.getDocId();
+            String fullname = docDescriptor.getFullname();
+            String docKey = docDescriptor.getDocKey();
             Track track = new Track();
             track.setKey(docKey);
             History history = new History();
@@ -244,7 +246,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             history.setUser(user);
             track.setHistory(history);
             // trigger to process history
-            onProcessHistorySave(documentDescriptor, docId, fullname, track);
+            onProcessHistorySave(docDescriptor, docId, fullname, track);
             return waitForDoc;
         } else {
             throw new BizException("failed to save document!");
@@ -252,12 +254,11 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
     }
 
     @Override
-    public DocumentDescriptor newVersion(Long docId, String filename, Track track) {
-        DocumentDescriptor documentDescriptor = onProcessSave(docId, filename, track);
-        if (documentDescriptor != null) {
-            onProcessHistorySave(documentDescriptor, docId, filename, track);
+    public void newVersion(Long docId, String filename, Track track) {
+        DocDescriptor docDescriptor = onProcessSave(docId, filename, track);
+        if (docDescriptor != null) {
+            onProcessHistorySave(docDescriptor, docId, filename, track);
         }
-        return documentDescriptor;
     }
 
     @Override
@@ -285,10 +286,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             return false;
         }
 
-        DocumentDescriptor documentDescriptor = new DocumentDescriptor(doc);
+        DocDescriptor docDescriptor = new DocDescriptor(doc);
 
         // rename minio file
-        SysAttachment docAttachment = documentDescriptor.obtainAttachment();
+        SysAttachment docAttachment = docDescriptor.obtainAttachment();
         String fileJson = StringPool.EMPTY;
         if (docAttachment != null) {
             String src = docAttachment.getFilepath();
@@ -327,24 +328,24 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         history.setKey(docKey);
         history.setVersion(version);
         history.setCreated(DateUtil.formatNow());
-        TurboUser currentUser = AuthUtil.getCurrentUser();
-        if (currentUser != null) {
-            User user = new User();
-            user.setId(String.valueOf(currentUser.getUserId()));
-            user.setName(currentUser.getNickname());
-            history.setUser(user);
-        }
+
+        Long userId = AuthUtil.getUserId();
+        String nickname = AuthUtil.getNickname();
+        User user = new User();
+        user.setId(String.valueOf(userId));
+        user.setName(nickname);
+        history.setUser(user);
         track.setHistory(history);
 
-        DocumentDescriptor documentDescriptor = new DocumentDescriptor(docHistory);
-        SysAttachment documentAttachment = documentDescriptor.obtainAttachment();
+        DocDescriptor docDescriptor = new DocDescriptor(docHistory);
+        SysAttachment documentAttachment = docDescriptor.obtainAttachment();
         if (documentAttachment != null) {
             String downloadUrl = documentManager.getDownloadUrl(documentAttachment.getFilepath());
             track.setUrl(downloadUrl);
         }
         track.setFiletype(docHistory.getDocType());
         try {
-            String fullname = DocumentDescriptor.getFullname(doc);
+            String fullname = DocDescriptor.getFullname(doc);
             newVersion(docId, fullname, track);
         } catch (Throwable ex) {
             log.error("Failed to restore document version.", ex);
@@ -369,12 +370,12 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         List<HistoryList.HistoryInfo> historyInfos =
                 docHistories.stream()
                         .map(docHistory -> {
-                            DocumentDescriptor documentDescriptor = new DocumentDescriptor(docHistory);
+                            DocDescriptor docDescriptor = new DocDescriptor(docHistory);
                             HistoryList.HistoryInfo historyInfo = new HistoryList.HistoryInfo();
-                            historyInfo.setKey(documentDescriptor.getDocKey());
+                            historyInfo.setKey(docDescriptor.getDocKey());
                             historyInfo.setServerVersion(docHistory.getServerVersion());
-                            historyInfo.setVersion(documentDescriptor.getVersion());
-                            historyInfo.setCreated(documentDescriptor.getCreateTime());
+                            historyInfo.setVersion(docDescriptor.getVersion());
+                            historyInfo.setCreated(docDescriptor.getCreateTime());
                             // set history user
                             HistoryList.HistoryUser historyUser = new HistoryList.HistoryUser();
                             Long userId = docHistory.getMaintainUserId();
@@ -426,19 +427,19 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         }
 
         HistoryData historyData = new HistoryData();
-        DocumentDescriptor documentDescriptor = new DocumentDescriptor(docHistory);
-        historyData.setVersion(documentDescriptor.getVersion());
-        historyData.setKey(documentDescriptor.getDocKey());
+        DocDescriptor docDescriptor = new DocDescriptor(docHistory);
+        historyData.setVersion(docDescriptor.getVersion());
+        historyData.setKey(docDescriptor.getDocKey());
 
         // set to doc download url
-        SysAttachment docAttachment = documentDescriptor.obtainAttachment();
+        SysAttachment docAttachment = docDescriptor.obtainAttachment();
         if (docAttachment != null) {
             String attachmentUrl = documentManager.getDownloadUrl(docAttachment.getFilepath());
             historyData.setUrl(attachmentUrl);
             historyData.setFileType(docAttachment.getFiletype());
         }
         // set to changedata download url
-        SysAttachment changeDataAttachment = documentDescriptor.obtainChangeData();
+        SysAttachment changeDataAttachment = docDescriptor.obtainChangeData();
         if (changeDataAttachment != null) {
             String changeDataDownloadUrl = documentManager.getDownloadUrl(changeDataAttachment.getFilepath());
             historyData.setChangesUrl(changeDataDownloadUrl);
@@ -454,10 +455,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
 
             // set previous attachment
             if (previousHistory != null) {
-                DocumentDescriptor previousDocumentDescriptor = new DocumentDescriptor(previousHistory);
+                DocDescriptor previousDocDescriptor = new DocDescriptor(previousHistory);
                 HistoryData.Previous previous = new HistoryData.Previous();
-                previous.setKey(previousDocumentDescriptor.getDocKey());
-                SysAttachment previousDocDescriptorDocAttachment = previousDocumentDescriptor.obtainAttachment();
+                previous.setKey(previousDocDescriptor.getDocKey());
+                SysAttachment previousDocDescriptorDocAttachment = previousDocDescriptor.obtainAttachment();
                 if (previousDocDescriptorDocAttachment != null) {
                     String previousAttachmentDownloadUrl = documentManager.getDownloadUrl(previousDocDescriptorDocAttachment.getFilepath());
                     previous.setUrl(previousAttachmentDownloadUrl);
@@ -482,6 +483,52 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                 docCooperatorService.remove(Wrappers.<DocCooperator>lambdaQuery().in(DocCooperator::getDocId, docIdList));
     }
 
+    @Override
+    @Transactional
+    public String share(ShareDTO share) throws BizException {
+        Long docId = share.getDocId();
+        // valid document exiting.
+        long count = count(Wrappers.<Doc>lambdaQuery().eq(Doc::getId, docId));
+        if (count <= 0) {
+            throw new BizException("not fount document");
+        }
+        String secureKey = SecureUtil.getRandomSecureKey(10);
+        DocPermission permission = share.getPermission();
+        // create the new permission group
+        DocPermissionGroup permissionGroup = new DocPermissionGroup();
+        permissionGroup.setDocId(docId);
+        permissionGroup.setGroupCode(secureKey);
+        permissionGroup.setGroupName(secureKey);
+        permissionGroup.setPermission(JsonUtils.toJson(permission));
+        permissionGroupService.save(permissionGroup);
+
+        ShareMode mode = share.getMode();
+        if (ShareMode.SPECIFIC == mode) {
+            List<Long> cooperator = share.getCooperator();
+            // insert document cooperator
+            List<DocCooperator> docCooperators =
+                    cooperator.stream()
+                            .map(cooperatorId -> {
+                                DocCooperator docCooperator = new DocCooperator();
+                                docCooperator.setCooperator(cooperatorId);
+                                docCooperator.setPermissionGroupId(permissionGroup.getId());
+                                docCooperator.setDocId(docId);
+                                return docCooperator;
+                            })
+                            .toList();
+            docCooperatorService.saveBatch(docCooperators);
+        }
+        PermissionShareDTO permissionShare = PermissionShareDTO.from(share);
+
+        permissionShare.setPermissionGroupId(permissionGroup.getId());
+
+        // set share permission to cache
+        SecureUtil.SecureCipher cipher = SecureUtil.getSystemSecureCipher();
+        ShareExpired expired = permissionShare.getExpired();
+        RedisUtil.setEx(secureKey, JsonUtils.toJson(permissionShare), expired.getTime(), TimeUnit.MILLISECONDS);
+        return cipher.encrypt(secureKey);
+    }
+
     /**
      * handle force save.
      * <p>it will be download from onlyoffice latest document, but not be create new version</p>
@@ -490,7 +537,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * @param filename the filename
      * @param body the callback {@link Track}
      */
-    public DocumentDescriptor onProcessSave(Long docId, String filename, Track body) {
+    public DocDescriptor onProcessSave(Long docId, String filename, Track body) {
         String downloadUrl = body.getUrl();
         // download file from onlyoffice server
         byte[] downloadFile = fileStorageMutator.getDownloadFile(downloadUrl);
@@ -513,7 +560,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             // reset doc file info
             String fileJson = JsonUtils.toJson(Lists.newArrayList(docAttachment));
             String newVersionDocKey = serviceConverter.generateRevisionId(docId.toString());
-            Integer version = DocumentDescriptor.trimToVersion(newVersionDocKey);
+            Integer version = DocDescriptor.trimToVersion(newVersionDocKey);
             // update
             LambdaUpdateWrapper<Doc> updateWrapper =
                     Wrappers.<Doc>lambdaUpdate()
@@ -528,7 +575,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                 latestDoc.setKey(newVersionDocKey);
             }
             // return latest document version
-            return new DocumentDescriptor(latestDoc);
+            return new DocDescriptor(latestDoc);
         }
         return null;
     }
@@ -579,7 +626,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * @param filename the file name like as test.docx
      * @param track the {@link Track} instance
      */
-    void onProcessHistorySave(DocumentDescriptor latestDocument, Long docId, String filename, Track track) {
+    void onProcessHistorySave(DocDescriptor latestDocument, Long docId, String filename, Track track) {
         // get history attachments
         List<SysAttachment> historyAttachments = getHistoryAttachments(latestDocument, docId, filename, track);
         History history = track.getHistory();
@@ -682,13 +729,13 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * get history version document attachment.
      * <p>the first add old document attachment, then from changeurl download changedata to minio and database. </p>
      *
-     * @param latestDocument the {@link DocumentDescriptor}
+     * @param latestDocument the {@link DocDescriptor}
      * @param docId the document id
      * @param filename the filename
      * @param track the {@link Track}
      * @return the {@link SysAttachment} list
      */
-    List<SysAttachment> getHistoryAttachments(DocumentDescriptor latestDocument, Long docId, String filename, Track track) {
+    List<SysAttachment> getHistoryAttachments(DocDescriptor latestDocument, Long docId, String filename, Track track) {
         List<SysAttachment> historyAttachments = Lists.newArrayList();
         if (latestDocument == null) {
             return historyAttachments;

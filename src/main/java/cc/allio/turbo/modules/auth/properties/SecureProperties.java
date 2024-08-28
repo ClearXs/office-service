@@ -1,7 +1,7 @@
 package cc.allio.turbo.modules.auth.properties;
 
-import cc.allio.turbo.modules.auth.constant.ExpireAt;
 import cc.allio.turbo.common.constant.SecureAlgorithm;
+import cc.allio.turbo.modules.auth.constant.ExpireAt;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

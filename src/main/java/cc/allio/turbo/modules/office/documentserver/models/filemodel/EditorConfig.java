@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Scope("prototype")
@@ -24,10 +24,10 @@ public class EditorConfig {
      * the parameters pertaining to the editor interface: opening mode (viewer or editor),
      * interface language, additional buttons, etc.
      */
-    private HashMap<String, Object> actionLink = null;  /* the data which contains the information about the
+    private Map<String, Object> actionLink = null;  /* the data which contains the information about the
     action in the document that will be scrolled to */
     private String callbackUrl;  // the absolute URL to the document storage service
-    private HashMap<String, Object> coEditing = null;
+    private Map<String, Object> coEditing = null;
     private String createUrl;  // the absolute URL of the document where it will be created and available after creation
     @Autowired
     private Customization customization;

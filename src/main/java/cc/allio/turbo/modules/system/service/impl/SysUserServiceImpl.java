@@ -1,20 +1,20 @@
 package cc.allio.turbo.modules.system.service.impl;
 
-import cc.allio.turbo.modules.system.entity.*;
-import cc.allio.turbo.modules.system.service.*;
-import cc.allio.uno.core.util.BeanUtils;
-import cc.allio.uno.core.util.ObjectUtils;
-import cc.allio.turbo.common.i18n.LocaleFormatter;
 import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.i18n.ExceptionCodes;
+import cc.allio.turbo.common.i18n.LocaleFormatter;
 import cc.allio.turbo.common.util.SecureUtil;
 import cc.allio.turbo.modules.system.constant.UserStatus;
+import cc.allio.turbo.modules.system.domain.SysUserVO;
 import cc.allio.turbo.modules.system.dto.BindingOrgDTO;
 import cc.allio.turbo.modules.system.dto.BindingPostDTO;
 import cc.allio.turbo.modules.system.dto.BindingRoleDTO;
+import cc.allio.turbo.modules.system.entity.*;
 import cc.allio.turbo.modules.system.mapper.SysUserMapper;
-import cc.allio.turbo.modules.system.domain.SysUserVO;
+import cc.allio.turbo.modules.system.service.*;
+import cc.allio.uno.core.util.BeanUtils;
+import cc.allio.uno.core.util.ObjectUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +32,7 @@ public class SysUserServiceImpl extends TurboCrudServiceImpl<SysUserMapper, SysU
     private final ISysOrgService orgService;
     private final ISysPostService postService;
     private final ISysUserPostService userPostService;
+    private final ISysThirdUserService thirdUserService;
 
     @Override
     @Transactional
@@ -140,5 +141,16 @@ public class SysUserServiceImpl extends TurboCrudServiceImpl<SysUserMapper, SysU
         List<SysRole> sysRoles = roleService.findRolesByUserId(sysUser.getId());
         userVO.setRoles(sysRoles);
         return userVO;
+    }
+
+    @Override
+    public SysUserVO findThirdUserDetails(String thirdUserId) {
+        SysThirdUser thirdUser = thirdUserService.getOne(Wrappers.<SysThirdUser>lambdaQuery().eq(SysThirdUser::getUserId, thirdUserId));
+        if (thirdUser != null) {
+            Long userId = thirdUser.getUserId();
+            SysUser sysUser = getById(userId);
+            return findUserDetails(sysUser);
+        }
+        return null;
     }
 }

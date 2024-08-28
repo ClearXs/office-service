@@ -1,8 +1,8 @@
 package cc.allio.turbo.modules.system.controller;
 
 import cc.allio.turbo.common.web.TurboTreeCrudController;
-import cc.allio.turbo.modules.system.entity.SysDic;
 import cc.allio.turbo.modules.system.domain.SysDicTree;
+import cc.allio.turbo.modules.system.entity.SysDic;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;

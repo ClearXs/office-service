@@ -1,7 +1,6 @@
 package cc.allio.turbo.extension.oss;
 
 import com.google.common.collect.Maps;
-import reactor.util.function.Tuple2;
 
 import java.util.Map;
 import java.util.Optional;
@@ -9,7 +8,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * oss execute 静态工厂
@@ -46,8 +44,8 @@ public class OssExecutorFactory {
      */
     public static OssExecutor getCurrent() {
         if (current == null && lazyLoader != null) {
-            Tuple2<String, OssTrait> resource = lazyLoader.get();
-            toggleExecutor(resource.getT1(), resource.getT2());
+            OssTrait resource = lazyLoader.get();
+            toggleExecutor(resource);
         }
         return current;
     }
@@ -61,11 +59,14 @@ public class OssExecutorFactory {
      *
      * @return maybe null if not exist
      */
-    public static OssExecutor getExecute(String ossType, OssTrait ossTrait) {
+    public static OssExecutor getExecute(OssTrait ossTrait) {
         Lock readLock = lock.readLock();
         readLock.lock();
         try {
-            return Optional.ofNullable(executors.get(ossType))
+            Provider provider = ossTrait.getProvider();
+            return Optional.ofNullable(provider)
+                    .map(Provider::getValue)
+                    .map(executors::get)
                     .map(func -> func.apply(ossTrait))
                     .orElse(null);
         } finally {
@@ -76,17 +77,13 @@ public class OssExecutorFactory {
     /**
      * 切换oss执行器
      */
-    public static void toggleExecutor(String ossType, OssTrait ossTrait) {
+    public static void toggleExecutor(OssTrait ossTrait) {
         Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            OssExecutorFactory.current = getExecute(ossType, ossTrait);
+            OssExecutorFactory.current = getExecute(ossTrait);
         } finally {
             writeLock.unlock();
         }
-    }
-
-    public interface LazyResource extends Supplier<Tuple2<String, OssTrait>> {
-
     }
 }

@@ -1,7 +1,10 @@
 package cc.allio.turbo.modules.office.controller;
 
 import cc.allio.turbo.common.exception.BizException;
+import cc.allio.turbo.common.util.RedisUtil;
+import cc.allio.turbo.common.util.SecureUtil;
 import cc.allio.turbo.common.web.R;
+import cc.allio.turbo.modules.auth.provider.TurboUser;
 import cc.allio.turbo.modules.office.configuration.properties.Docservice;
 import cc.allio.turbo.modules.office.configuration.properties.DocumentProperties;
 import cc.allio.turbo.modules.office.configuration.properties.Mention;
@@ -13,25 +16,24 @@ import cc.allio.turbo.modules.office.documentserver.models.enums.Action;
 import cc.allio.turbo.modules.office.documentserver.models.enums.Type;
 import cc.allio.turbo.modules.office.documentserver.models.filemodel.FileModel;
 import cc.allio.turbo.modules.office.documentserver.storage.FileStoragePathBuilder;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import cc.allio.turbo.modules.office.documentserver.vo.Mentions;
+import cc.allio.turbo.modules.office.dto.PermissionShareDTO;
 import cc.allio.turbo.modules.office.entity.Doc;
 import cc.allio.turbo.modules.office.service.IDocService;
 import cc.allio.turbo.modules.office.service.IDocUserService;
 import cc.allio.turbo.modules.office.vo.DocUser;
 import cc.allio.turbo.modules.system.entity.SysAttachment;
-import cc.allio.uno.core.util.CollectionUtils;
 import cc.allio.uno.core.util.JsonUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
@@ -51,66 +53,109 @@ public class EditorController {
 
     @GetMapping
     @Operation(summary = "获取编辑器配置")
-    public R<Editor> getEditorConfig(@RequestParam("docId") final Long docId,
-                                     @RequestParam(value = "action", required = false) final String actionParam,
-                                     @RequestParam(value = "type", required = false) final String typeParam,
-                                     @RequestParam(value = "actionLink", required = false) final String actionLink,
-                                     @RequestParam(value = "directUrl", required = false, defaultValue = "false") final Boolean directUrl,
-                                     HttpServletRequest request) {
+    public R<Editor> getEditorConfig(
+            @Valid @NotNull TurboUser currentUser,
+            @RequestParam("docId") final Long docId,
+            @RequestParam(value = "action", required = false, defaultValue = "edit") final Action action,
+            @RequestParam(value = "type", required = false, defaultValue = "desktop") final Type type,
+            @RequestParam(value = "actionLink", required = false) final String actionLink,
+            @RequestParam(value = "directUrl", required = false, defaultValue = "false") final Boolean directUrl,
+            HttpServletRequest request) {
+
         Locale locale = request.getLocale();
-        Action action = Action.edit;
-        Type type = Type.desktop;
-
-        if (actionParam != null) {
-            action = Action.valueOf(actionParam);
-        }
-
-        if (typeParam != null) {
-            type = Type.valueOf(typeParam);
-        }
-
         Doc doc = docService.getById(docId);
         if (doc == null) {
             return R.internalError("not found document!");
         }
 
-        String file = doc.getFile();
-        List<SysAttachment> attachments;
-        try {
-            attachments = JsonUtils.readList(file, SysAttachment.class);
-        } catch (Throwable ex) {
-            log.error("Failed to parse attachment", ex);
-            return R.internalError("Failed to parse attachment!");
-        }
+        // get file model with the default file parameters
+        DocDescriptor docDescriptor = new DocDescriptor(doc);
+        SysAttachment attachment = docDescriptor.obtainAttachment();
 
-        if (CollectionUtils.isEmpty(attachments)) {
-            return R.internalError("not found document!");
-        }
-        SysAttachment attachment = attachments.get(0);
-
-        // find user
+        // find current document user
         DocUser docUser;
         try {
-            docUser = docUserService.getDocUserByRequest(docId);
+            docUser = docUserService.getDocUserByCurrentUser(currentUser, docId);
         } catch (BizException ex) {
             return R.internalError(ex.getMessage());
         }
+
+        DefaultFileWrapper fileWrapper =
+                DefaultFileWrapper
+                        .builder()
+                        .doc(docDescriptor)
+                        .fileId(attachment.getId())
+                        // fullname
+                        .filename(docDescriptor.getFullname())
+                        .filepath(Optional.of(attachment).map(SysAttachment::getFilepath).orElse(null))
+                        .type(type)
+                        .lang(locale.toLanguageTag())
+                        .action(action)
+                        .user(docUser)
+                        .actionData(actionLink)
+                        .isEnableDirectUrl(directUrl)
+                        .build();
+        Editor editor = newEditor(fileWrapper, directUrl);
+        return R.ok(editor);
+    }
+
+    @GetMapping("/share/{secureKey}")
+    @Operation(summary = "获取分享文档的编辑器配置")
+    public R<Editor> getShareEditorConfig(
+            @Valid @NotNull TurboUser currentUser,
+            @PathVariable("secureKey") String secureKey,
+            @RequestParam(value = "action", required = false, defaultValue = "edit") final Action action,
+            @RequestParam(value = "type", required = false, defaultValue = "desktop") final Type type,
+            @RequestParam(value = "actionLink", required = false) final String actionLink,
+            @RequestParam(value = "directUrl", required = false, defaultValue = "false") final Boolean directUrl,
+            HttpServletRequest request) {
+        Locale locale = request.getLocale();
+        SecureUtil.SecureCipher cipher = SecureUtil.getSystemSecureCipher();
+        String cacheKey = cipher.decrypt(secureKey);
+        if (Boolean.FALSE.equals(RedisUtil.hasKey(secureKey))) {
+            return R.internalError("not found any shared document!");
+        }
+        String shareString = RedisUtil.get(cacheKey);
+        PermissionShareDTO share = JsonUtils.parse(shareString, PermissionShareDTO.class);
+
+        // find document
+        Long docId = share.getDocId();
+        Doc doc = docService.getById(docId);
+        if (doc == null) {
+            return R.internalError("not found document!");
+        }
+
         // get file model with the default file parameters
-        DocumentDescriptor documentDescriptor = new DocumentDescriptor(doc);
-        DefaultFileWrapper fileWrapper = DefaultFileWrapper
-                .builder()
-                .doc(documentDescriptor)
-                .fileId(attachment.getId())
-                // fullname
-                .filename(documentDescriptor.getFullname())
-                .filepath(Optional.of(attachment).map(SysAttachment::getFilepath).orElse(null))
-                .type(type)
-                .lang(locale.toLanguageTag())
-                .action(action)
-                .user(docUser)
-                .actionData(actionLink)
-                .isEnableDirectUrl(directUrl)
-                .build();
+        DocDescriptor docDescriptor = new DocDescriptor(doc);
+        SysAttachment attachment = docDescriptor.obtainAttachment();
+
+        // find current document user
+        DocUser docUser;
+        try {
+            docUser = docUserService.getDocUserByShare(share);
+        } catch (BizException ex) {
+            return R.internalError(ex.getMessage());
+        }
+        DefaultFileWrapper fileWrapper =
+                DefaultFileWrapper
+                        .builder()
+                        .doc(docDescriptor)
+                        .fileId(attachment.getId())
+                        // fullname
+                        .filename(docDescriptor.getFullname())
+                        .filepath(Optional.of(attachment).map(SysAttachment::getFilepath).orElse(null))
+                        .type(type)
+                        .lang(locale.toLanguageTag())
+                        .action(action)
+                        .user(docUser)
+                        .actionData(actionLink)
+                        .isEnableDirectUrl(directUrl)
+                        .build();
+        Editor editor = newEditor(fileWrapper, directUrl);
+        return R.ok(editor);
+    }
+
+    Editor newEditor(DefaultFileWrapper fileWrapper, Boolean directUrl) {
         FileModel fileModel = fileConfigurer.getFileModel(fileWrapper);
 
         Editor editor = new Editor();
@@ -137,8 +182,7 @@ public class EditorController {
         // get user data for mentions and add it to the model
         editor.setUsersForMentions(getDefaultMentions());
         editor.setDocumentServerUrl(documentProperties.getOnlyofficeServerUrl());
-
-        return R.ok(editor);
+        return editor;
     }
 
     private List<Mentions> getDefaultMentions() {

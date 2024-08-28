@@ -3,7 +3,6 @@ package cc.allio.turbo.modules.developer.domain;
 import cc.allio.turbo.common.db.entity.Entity;
 import cc.allio.turbo.modules.developer.constant.AttributeType;
 import cc.allio.turbo.modules.developer.entity.DevBo;
-import cc.allio.turbo.modules.developer.entity.DevDataSource;
 import cc.allio.uno.core.util.JsonUtils;
 import cc.allio.uno.data.orm.dsl.ColumnDef;
 import cc.allio.uno.data.orm.dsl.Table;
@@ -97,7 +96,7 @@ public class BoSchema implements Serializable, Entity {
 
     /**
      * 获取primary bo attr schema
-     * <p>{@link #attrs}中第一个是{@link cc.allio.turbo.modules.developer.constant.AttributeType#TABLE}的数据</p>
+     * <p>{@link #attrs}中第一个是{@link AttributeType#TABLE}的数据</p>
      *
      * @return BoAttrSchema or null
      */

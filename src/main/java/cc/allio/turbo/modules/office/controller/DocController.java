@@ -3,6 +3,7 @@ package cc.allio.turbo.modules.office.controller;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.web.R;
 import cc.allio.turbo.common.web.TurboCrudController;
+import cc.allio.turbo.modules.auth.provider.TurboUser;
 import cc.allio.turbo.modules.office.documentserver.vo.HistoryData;
 import cc.allio.turbo.modules.office.documentserver.vo.HistoryList;
 import cc.allio.turbo.modules.office.documentserver.vo.Rename;
@@ -13,6 +14,7 @@ import cc.allio.turbo.modules.office.service.IDocUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -39,8 +41,8 @@ public class DocController extends TurboCrudController<Doc, Doc, IDocService> {
 
     @GetMapping("/forceSave/{docId}")
     @Operation(summary = "强制保存")
-    public R<Boolean> forceSave(@PathVariable("docId") Long docId) throws BizException {
-        Boolean success = this.docUserService.forceSave(docId);
+    public R<Boolean> forceSave(@Valid @NotNull TurboUser currentUser, @PathVariable("docId") Long docId) throws BizException {
+        Boolean success = this.docUserService.forceSave(currentUser, docId);
         return R.ok(success);
     }
 
@@ -59,14 +61,14 @@ public class DocController extends TurboCrudController<Doc, Doc, IDocService> {
     }
 
     @GetMapping("/history/{docId}")
-    @Operation(summary = "获取用户的历史版本")
+    @Operation(summary = "获取文档历史版本列表")
     public R<HistoryList> history(@PathVariable("docId") Long docId) throws BizException {
         HistoryList history = this.service.getHistoryList(docId);
         return R.ok(history);
     }
 
     @GetMapping("/historyData/{docId}/{version}")
-    @Operation(summary = "获取用户的历史版本数据")
+    @Operation(summary = "获取历史版本数据")
     public R<HistoryData> historyData(@PathVariable("docId") Long docId, @PathVariable("version") Integer version) throws BizException {
         HistoryData historyData = this.service.getHistoryData(docId, version);
         return R.ok(historyData);
@@ -81,8 +83,8 @@ public class DocController extends TurboCrudController<Doc, Doc, IDocService> {
 
     @PostMapping("/kickoutOthers/{docId}")
     @Operation(summary = "提出非创建者其他人")
-    public R<Boolean> kickoutOthers(@PathVariable("docId") Long docId) throws BizException {
-        Boolean success = docUserService.kickoutOthres(docId);
+    public R<Boolean> kickoutOthers(@Valid @NotNull TurboUser currentUser, @PathVariable("docId") Long docId) throws BizException {
+        Boolean success = docUserService.kickoutOthres(currentUser, docId);
         return R.ok(success);
     }
 
@@ -95,8 +97,8 @@ public class DocController extends TurboCrudController<Doc, Doc, IDocService> {
 
     @GetMapping("/getOnlineDocUser/{docId}")
     @Operation(summary = "获取文档在线编辑人列表")
-    public R<List<OnlineDocUser>> getOnlineDocUser(@PathVariable("docId") Long docId) throws BizException {
-        List<OnlineDocUser> onlineDocUser = docUserService.getOnlineDocUser(docId);
+    public R<List<OnlineDocUser>> getOnlineDocUser(@Valid @NotNull TurboUser currentUser, @PathVariable("docId") Long docId) throws BizException {
+        List<OnlineDocUser> onlineDocUser = docUserService.getOnlineDocUser(currentUser, docId);
         return R.ok(onlineDocUser);
     }
 }

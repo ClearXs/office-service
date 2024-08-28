@@ -18,7 +18,7 @@ public final class R<T> {
     /**
      * 响应状态码
      *
-     * @see org.springframework.http.HttpStatus
+     * @see HttpStatus
      */
     private int code;
 
@@ -54,7 +54,7 @@ public final class R<T> {
     }
 
     /**
-     * {@link org.springframework.http.HttpStatus#UNAUTHORIZED}
+     * {@link HttpStatus#UNAUTHORIZED}
      *
      * @see #of(int, Object, String, Throwable)
      */
@@ -63,7 +63,7 @@ public final class R<T> {
     }
 
     /**
-     * {@link org.springframework.http.HttpStatus#UNAUTHORIZED}
+     * {@link HttpStatus#UNAUTHORIZED}
      *
      * @see #of(int, Object, String, Throwable)
      */

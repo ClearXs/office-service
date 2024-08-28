@@ -1,9 +1,9 @@
 package cc.allio.turbo.common.db.mybatis.service;
 
 import cc.allio.turbo.common.cache.CacheHelper;
-import cc.allio.turbo.common.db.entity.IdEntity;
 import cc.allio.turbo.common.cache.CacheName;
 import cc.allio.turbo.common.cache.TurboCache;
+import cc.allio.turbo.common.db.entity.IdEntity;
 import cc.allio.uno.core.util.StringUtils;
 
 /**

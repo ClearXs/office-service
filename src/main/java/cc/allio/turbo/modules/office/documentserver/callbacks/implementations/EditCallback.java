@@ -26,7 +26,7 @@ public class EditCallback implements Callback {
         if (CollectionUtils.isEmpty(actions)) {
             return result;
         }
-        Action action = body.getActions().get(0);  // get the user ID who is editing the document
+        Action action = body.getActions().getFirst();  // get the user ID who is editing the document
         if (cc.allio.turbo.modules.office.documentserver.models.enums.Action.edit.equals(action.getType())) {  // if this value is not equal to the user ID
             String user = action.getUserid();  // get user ID
             if (!body.getUsers().contains(user)) {  // if this user is not specified in the body

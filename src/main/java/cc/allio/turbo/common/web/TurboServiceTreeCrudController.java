@@ -1,9 +1,9 @@
 package cc.allio.turbo.common.web;
 
-import cc.allio.turbo.common.db.mybatis.helper.Conditions;
-import cc.allio.turbo.common.domain.TreeDomain;
 import cc.allio.turbo.common.db.entity.TreeEntity;
+import cc.allio.turbo.common.db.mybatis.helper.Conditions;
 import cc.allio.turbo.common.db.mybatis.service.ITurboTreeCrudService;
+import cc.allio.turbo.common.domain.TreeDomain;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.i18n.ExceptionCodes;
 import cc.allio.turbo.common.web.params.QueryParam;

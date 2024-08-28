@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 定义Repository Crud操作集合。参考至{@link org.springframework.data.repository.ListCrudRepository}
+ * 定义Repository Crud操作集合。参考至{@link ListCrudRepository}
  *
  * @author j.x
  * @date 2024/1/23 23:47

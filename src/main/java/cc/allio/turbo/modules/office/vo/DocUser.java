@@ -22,7 +22,7 @@ public class DocUser {
     /**
      * 用户id
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 用户名称
@@ -47,5 +47,5 @@ public class DocUser {
     /**
      * 文档个性化
      */
-    private DocCustomization docCustomization;
+    private DocCustomization customization;
 }

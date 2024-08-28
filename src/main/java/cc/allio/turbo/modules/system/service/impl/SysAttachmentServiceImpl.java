@@ -1,14 +1,14 @@
 package cc.allio.turbo.modules.system.service.impl;
 
+import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
+import cc.allio.turbo.common.exception.BizException;
+import cc.allio.turbo.common.i18n.ExceptionCodes;
 import cc.allio.turbo.extension.oss.*;
 import cc.allio.turbo.extension.oss.request.OssGetRequest;
 import cc.allio.turbo.extension.oss.request.OssPutRequest;
-import cc.allio.turbo.modules.system.properties.FileProperties;
-import cc.allio.turbo.common.exception.BizException;
-import cc.allio.turbo.common.i18n.ExceptionCodes;
-import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
 import cc.allio.turbo.modules.system.entity.SysAttachment;
 import cc.allio.turbo.modules.system.mapper.SysAttachmentMapper;
+import cc.allio.turbo.modules.system.properties.FileProperties;
 import cc.allio.turbo.modules.system.service.ISysAttachmentService;
 import cc.allio.uno.core.StringPool;
 import cc.allio.uno.core.util.StringUtils;

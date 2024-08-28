@@ -158,7 +158,7 @@ public interface DomainServiceRegistry {
     int size();
 
     /**
-     * 基于{@link DomainObject}获取BoKey，需要求加上{@link cc.allio.turbo.modules.developer.api.annotation.Domain}注解
+     * 基于{@link DomainObject}获取BoKey，需要求加上{@link Domain}注解
      *
      * @param domainObjectClass domainObjectClass
      * @param <T>               domainObjectClass type

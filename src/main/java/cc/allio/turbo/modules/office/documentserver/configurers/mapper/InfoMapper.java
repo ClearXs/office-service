@@ -2,7 +2,7 @@ package cc.allio.turbo.modules.office.documentserver.configurers.mapper;
 
 import cc.allio.turbo.modules.office.documentserver.configurers.wrappers.DefaultDocumentWrapper;
 import cc.allio.turbo.modules.office.documentserver.models.configurations.Info;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
+import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
 import cc.allio.turbo.modules.system.entity.SysUser;
 import cc.allio.turbo.modules.system.service.ISysUserService;
 
@@ -23,7 +23,7 @@ public class InfoMapper implements Mapper<DefaultDocumentWrapper, Info> {
 
     @Override
     public Info toModel(DefaultDocumentWrapper wrapper) {
-        DocumentDescriptor doc = wrapper.getDoc();
+        DocDescriptor doc = wrapper.getDoc();
         Info info = new Info();
         Long creator = doc.getCreator();
         if (creator != null) {

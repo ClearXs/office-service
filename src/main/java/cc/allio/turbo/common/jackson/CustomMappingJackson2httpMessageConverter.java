@@ -21,7 +21,6 @@ public class CustomMappingJackson2httpMessageConverter extends MappingJackson2Ht
         objectMapper.registerModule(new DateModule());
         objectMapper.registerModule(new DSLNameModule());
         objectMapper.registerModule(new MapEntityModule());
-        objectMapper.registerModule(new UtileModule());
         return objectMapper;
     }
 }

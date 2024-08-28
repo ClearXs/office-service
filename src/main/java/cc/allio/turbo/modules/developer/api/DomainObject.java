@@ -15,7 +15,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 public abstract class DomainObject extends DomainEntity {
 
     /**
-     * 获取该领域对象唯一标识。子类实现，默认读取该类上是否存在{@link cc.allio.turbo.modules.developer.api.annotation.Domain}注解
+     * 获取该领域对象唯一标识。子类实现，默认读取该类上是否存在{@link Domain}注解
      *
      * @return 领域对象唯一标识
      */

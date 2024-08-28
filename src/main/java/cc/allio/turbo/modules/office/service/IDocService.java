@@ -2,18 +2,17 @@ package cc.allio.turbo.modules.office.service;
 
 import cc.allio.turbo.common.db.mybatis.service.ITurboCrudService;
 import cc.allio.turbo.common.exception.BizException;
-import cc.allio.turbo.modules.office.documentserver.util.DocumentDescriptor;
 import cc.allio.turbo.modules.office.documentserver.vo.HistoryData;
 import cc.allio.turbo.modules.office.documentserver.vo.HistoryList;
 import cc.allio.turbo.modules.office.documentserver.vo.Rename;
 import cc.allio.turbo.modules.office.documentserver.vo.Track;
 import cc.allio.turbo.modules.office.dto.DocumentCreateDTO;
+import cc.allio.turbo.modules.office.dto.ShareDTO;
 import cc.allio.turbo.modules.office.entity.Doc;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * about document handle operation. like as
@@ -60,9 +59,8 @@ public interface IDocService extends ITurboCrudService<Doc> {
      * @param docId    the doc id
      * @param filename the filename
      * @param track    the  onlyoffice callback data
-     * @return
      */
-    DocumentDescriptor newVersion(Long docId, String filename, Track track);
+    void newVersion(Long docId, String filename, Track track);
 
     /**
      * modify document name
@@ -105,4 +103,16 @@ public interface IDocService extends ITurboCrudService<Doc> {
      * @return success if true
      */
     Boolean remove(List<Long> docIdList);
+
+    /**
+     * share document. it must be:
+     * <ol>
+     *     <li>from {@link ShareDTO} permission create newly document permission group</li>
+     *     <li>save to cache and encrypt cache key</li>
+     * </ol>
+     *
+     * @param share the {@link ShareDTO} instance
+     * @return the encrypt catch key
+     */
+    String share(ShareDTO share) throws BizException;
 }

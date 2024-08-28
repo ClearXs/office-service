@@ -1,10 +1,10 @@
 package cc.allio.turbo.modules.developer.domain;
 
-import cc.allio.turbo.common.api.Key;
+import cc.allio.turbo.common.db.constant.FieldType;
 import cc.allio.turbo.common.db.entity.Entity;
 import cc.allio.turbo.common.domain.Domains;
+import cc.allio.turbo.modules.developer.api.Key;
 import cc.allio.turbo.modules.developer.constant.AttributeType;
-import cc.allio.turbo.common.db.constant.FieldType;
 import cc.allio.turbo.modules.developer.domain.view.ColumnType;
 import cc.allio.turbo.modules.developer.language.TypeScriptType;
 import cc.allio.uno.core.type.Types;

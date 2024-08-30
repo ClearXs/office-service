@@ -3,12 +3,14 @@ turbo:
     tenant:
       # 租户字段
       field: tenant_id
+      # 默认租户id
+      default-tenant-id: 1
       # 租户拼接忽略的表
       ignore-list:
         - sys_tenant
         - sys_user_role
         - sys_role_menu
-        - sys_cloud_storage_config
         - sys_user_post
         - biz_tree
         - dev_datasource
+        - sys_storage_config

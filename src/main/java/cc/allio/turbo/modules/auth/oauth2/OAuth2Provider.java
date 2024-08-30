@@ -210,7 +210,13 @@ public enum OAuth2Provider {
             builder.clientName("okta");
             return builder;
         }
+    },
 
+    CUSTOM("custom") {
+        @Override
+        public ClientRegistration.Builder getBuilder() {
+            return getBuilder(ClientAuthenticationMethod.CLIENT_SECRET_BASIC, DEFAULT_REDIRECT_URL);
+        }
     };
 
     private final String registrationId;

@@ -2,8 +2,8 @@ turbo:
   office:
     document:
       # onlyoffice访问地址
-      document-server-url: http://localhost:8700
-      onlyoffice-server-url: http://localhost:8890
+      document-server-url: ${DOCUMENT_SERVER_URL:http://localhost:8700}
+      onlyoffice-server-url: ${ONLYOFFICE_SERVER_URL:http://localhost:8890}
       storage:
         path: document
       docservice:
@@ -12,13 +12,13 @@ turbo:
         # 支持预览的文件格式
         viewed-docs: .pdf|.djvu|.xps|.oxps
         # 支持编辑的文件格式
-        edited-docs: .docx|.xlsx|.csv|.pptx|.txt|.docxf
+        edited-docs: .doc|.docx|.xls|.xlsx|.csv|.pptx|.txt|.docxf
         # 支持转换的文件格式
         convert-docs: .docm|.dotx|.dotm|.dot|.doc|.odt|.fodt|.ott|.xlsm|.xlsb|.xltx|.xltm|.xlt|.xls|.ods|.fods|.ots|.pptm|.ppt|.ppsx|.ppsm|.pps|.potx|.potm|.pot|.odp|.fodp|.otp|.rtf|.mht|.html|.htm|.xml|.epub|.fb2
         # 连接超时时间
         timeout: 120000
         # 请求onlyoffice密钥
-        secret: onlyoffice
+        secret: turbo
         # 验证头部
         header: Authorization
         verify-peer-off: true
@@ -28,8 +28,8 @@ turbo:
           postfix: -hist
         url:
           site: ${turbo.office.document.document-server-url}
-          converter: ConvertService.ashx
-          command: coauthoring/CommandService.ashx
+          converter: /ConvertService.ashx
+          command: /coauthoring/CommandService.ashx
           api: /web-apps/apps/api/documents/api.js
           preloader: /web-apps/apps/api/documents/cache-scripts.html
           # 在线协作文档服务访问地址

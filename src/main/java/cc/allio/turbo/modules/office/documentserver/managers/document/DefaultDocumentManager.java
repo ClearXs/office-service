@@ -5,6 +5,8 @@ import cc.allio.turbo.modules.office.documentserver.storage.FileStorageMutator;
 import cc.allio.turbo.modules.office.documentserver.storage.FileStoragePathBuilder;
 import cc.allio.turbo.modules.office.documentserver.util.file.FileUtility;
 import cc.allio.turbo.modules.office.documentserver.util.service.ServiceConverter;
+import cc.allio.uno.core.util.StringUtils;
+import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
@@ -99,13 +101,22 @@ public class DefaultDocumentManager implements DocumentManager {
     // get the callback URL
     public String getCallback(Long docId, Long fileId, final String filename, String filepath) {
         String serverPath = storagePathBuilder.getServerUrl(true);
-        String query =
-                String.format(trackUrl + "/" + docId + "?filename=%s&filepath=%s&fileId=%s" + "&" + WebUtil.X_AUTHENTICATION + "=%s",
-                        URLEncoder.encode(filename, StandardCharsets.UTF_8),
-                        URLEncoder.encode(filepath, StandardCharsets.UTF_8),
-                        fileId,
-                        WebUtil.getToken());
-        return serverPath + query;
+        String templateUrl = serverPath + trackUrl + "/{docId}";
+        Map<String, Object> vars = Maps.newHashMap();
+        vars.put("docId", docId);
+        vars.put("filename", URLEncoder.encode(filename, StandardCharsets.UTF_8));
+        vars.put("filepath", URLEncoder.encode(filepath, StandardCharsets.UTF_8));
+        vars.put("fileId", fileId);
+        // append authentication
+        String token = WebUtil.getToken();
+        if (StringUtils.isNotBlank(token)) {
+            vars.put(WebUtil.X_AUTHENTICATION, token);
+        }
+        String userIdentifier = WebUtil.getUserIdentifier();
+        if (StringUtils.isNotBlank(userIdentifier)) {
+            vars.put(WebUtil.X_USER_IDENTIFIER, userIdentifier);
+        }
+        return StringUtils.joinUrl(templateUrl, vars);
     }
 
     // get URL to download a file

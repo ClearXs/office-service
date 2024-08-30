@@ -11,7 +11,7 @@
 
     <groupId>cc.allio</groupId>
     <artifactId>office-service</artifactId>
-    <version>0.1.1</version>
+    <version>0.2</version>
     <name>office-service</name>
     <description>office-service在线协作后端</description>
     <url>https://github.com/ClearXs/office-service.git</url>
@@ -253,6 +253,7 @@
     </dependencies>
 
     <build>
+        <finalName>${project.artifactId}</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -296,6 +297,12 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

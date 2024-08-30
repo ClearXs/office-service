@@ -28,7 +28,7 @@ turbo:
       issuer: https://allio.cc
       subject: token
       # token过期时间
-      expire-at: d_1
+      expire-at: never
     captcha:
       # 验证码宽度
       width: 120

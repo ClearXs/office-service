@@ -1,5 +1,7 @@
 FROM --platform=linux/arm64 openjdk:21
 
+LABEL cc.allio.uno.turbo.author=jiangw1027@gmail.com
+
 RUN mkdir -p /turbo
 
 WORKDIR /turbo

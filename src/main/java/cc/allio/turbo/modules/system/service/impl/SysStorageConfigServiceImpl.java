@@ -7,7 +7,6 @@ import cc.allio.turbo.modules.system.entity.SysStorageConfig;
 import cc.allio.turbo.modules.system.mapper.SysStorageConfigMapper;
 import cc.allio.turbo.modules.system.service.ISysStorageConfigService;
 import cc.allio.turbo.modules.system.wrapper.StorageConfigWrapper;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.BeansException;
@@ -34,15 +33,6 @@ public class SysStorageConfigServiceImpl extends TurboCrudServiceImpl<SysStorage
     @Override
     public boolean saveOrUpdate(SysStorageConfig entity) {
         boolean saveOrUpdate = super.saveOrUpdate(entity);
-        if (Enable.ENABLE == entity.getEnable()) {
-            fireEnable();
-        }
-        return saveOrUpdate;
-    }
-
-    @Override
-    public boolean saveOrUpdate(SysStorageConfig entity, Wrapper<SysStorageConfig> updateWrapper) {
-        boolean saveOrUpdate = super.saveOrUpdate(entity, updateWrapper);
         if (Enable.ENABLE == entity.getEnable()) {
             fireEnable();
         }

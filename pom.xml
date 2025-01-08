@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.2</version>
+        <groupId>cc.allio.uno</groupId>
+        <artifactId>uno-parent</artifactId>
+        <version>1.2.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -25,27 +25,30 @@
 
     <properties>
         <java.version>21</java.version>
-        <uno.version>1.1.9</uno.version>
+        <uno.version>1.2.0</uno.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
         <maven-plugin.version>3.11.0</maven-plugin.version>
-        <knife4j.version>4.3.0</knife4j.version>
+
+        <knife4j.version>4.5.0</knife4j.version>
         <bcpkix-jdk15on.version>1.70</bcpkix-jdk15on.version>
         <capatcha.version>2.2.3</capatcha.version>
         <ognl.version>3.1.26</ognl.version>
-        <aliyunoss.version>3.15.1</aliyunoss.version>
-        <minio.version>8.5.7</minio.version>
+        <aliyunoss.version>3.18.1</aliyunoss.version>
+        <minio.version>8.5.12</minio.version>
         <okhttp>4.12.0</okhttp>
-        <easyeexcel.version>3.3.2</easyeexcel.version>
-        <opentelemetry.version>1.33.0</opentelemetry.version>
+        <easyeexcel.version>4.0.2</easyeexcel.version>
         <justauth.version>1.16.6</justauth.version>
         <jodd.version>5.3.0</jodd.version>
+
         <prime-jwt.version>1.3.1</prime-jwt.version>
+
+
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>cc.allio</groupId>
+                <groupId>cc.allio.uno</groupId>
                 <artifactId>uno-bom</artifactId>
                 <version>${uno.version}</version>
                 <type>pom</type>
@@ -112,6 +115,10 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
@@ -145,19 +152,19 @@
         </dependency>
         <!-- uno -->
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-starter-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-data-db</artifactId>
         </dependency>
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-data-mongodb</artifactId>
         </dependency>
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-http</artifactId>
         </dependency>
         <dependency>
@@ -197,7 +204,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
+            <version>${okhttp}</version>
         </dependency>
         <!-- observability -->
         <dependency>
@@ -217,7 +224,7 @@
         <dependency>
             <groupId>com.inversoft</groupId>
             <artifactId>prime-jwt</artifactId>
-            <version>1.3.1</version>
+            <version>${prime-jwt.version}</version>
         </dependency>
         <!-- test -->
         <dependency>
@@ -241,19 +248,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>cc.allio</groupId>
+            <groupId>cc.allio.uno</groupId>
             <artifactId>uno-data-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>${project.name}</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -356,19 +363,6 @@
             </build>
         </profile>
     </profiles>
-
-    <distributionManagement>
-        <repository>
-            <id>rdc-releases</id>
-            <name>User Project Release</name>
-            <url>https://packages.aliyun.com/maven/repository/2300285-release-cAc7WJ/</url>
-        </repository>
-        <snapshotRepository>
-            <id>rdc-snapshots</id>
-            <name>User ProjectSNAPSHOTS</name>
-            <url>https://packages.aliyun.com/maven/repository/2300285-snapshot-JAW5GT/</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <!-- 拉取snapshot -->
     <repositories>

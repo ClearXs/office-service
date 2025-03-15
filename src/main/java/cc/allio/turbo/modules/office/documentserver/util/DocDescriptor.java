@@ -28,7 +28,7 @@ public class DocDescriptor {
     @Getter
     private final String docKey;
     @Getter
-    private Long creator;
+    private String creator;
     @Getter
     private final String createTime;
     private final String file;

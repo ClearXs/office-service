@@ -12,6 +12,11 @@ import java.util.List;
 public class SecureProperties {
 
     /**
+     * 系统暗号
+     */
+    private String cipher = "allio";
+
+    /**
      * 加解密密钥
      */
     private String secretKey;

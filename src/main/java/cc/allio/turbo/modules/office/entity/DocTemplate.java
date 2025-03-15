@@ -18,7 +18,7 @@ public class DocTemplate extends TenantEntity {
      */
     @TableField("uploader")
     @Schema(name = "上传者", description = "")
-    private Long uploader;
+    private String uploader;
 
     /**
      * 模板名称

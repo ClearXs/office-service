@@ -29,13 +29,13 @@ public class DocPageDTO extends Page<Doc> {
      * 文档创建者
      */
     @Schema(description = "文档创建者")
-    private Long creator;
+    private String creator;
 
     /**
      * 文档协作者
      */
     @Schema(description = "文档协作者")
-    private Long collaborator;
+    private String collaborator;
 
     /**
      * 是否分享

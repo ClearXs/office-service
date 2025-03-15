@@ -18,7 +18,7 @@ public class DocChanges extends TenantEntity {
      */
     @TableField("user_id")
     @Schema(description = "用户id")
-    private Long userId;
+    private String userId;
 
     /**
      * 文档id

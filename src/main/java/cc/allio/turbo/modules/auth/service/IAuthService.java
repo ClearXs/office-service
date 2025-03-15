@@ -1,15 +1,15 @@
 package cc.allio.turbo.modules.auth.service;
 
+import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.modules.auth.authentication.TurboJwtAuthenticationToken;
+import cc.allio.turbo.modules.auth.dto.CaptchaDTO;
 import cc.allio.turbo.modules.auth.provider.TurboUser;
+import cc.allio.turbo.modules.system.domain.SysMenuTree;
 import cc.allio.turbo.modules.system.dto.ChangePasswordDTO;
 import cc.allio.turbo.modules.system.entity.SysOrg;
 import cc.allio.turbo.modules.system.entity.SysPost;
 import cc.allio.turbo.modules.system.entity.SysRole;
 import cc.allio.turbo.modules.system.entity.SysUser;
-import cc.allio.turbo.modules.system.domain.SysMenuTree;
-import cc.allio.turbo.modules.auth.dto.CaptchaDTO;
-import cc.allio.turbo.common.exception.BizException;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;

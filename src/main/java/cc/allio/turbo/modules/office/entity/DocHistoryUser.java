@@ -27,7 +27,7 @@ public class DocHistoryUser extends TenantEntity {
      */
     @TableField("user_id")
     @Schema(name = "用户id")
-    private Long userId;
+    private String userId;
 
     /**
      * 用户名称

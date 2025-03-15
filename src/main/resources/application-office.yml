@@ -2,8 +2,8 @@ turbo:
   office:
     document:
       # onlyoffice访问地址
-      document-server-url: ${DOCUMENT_SERVER_URL:http://localhost:8700}
-      onlyoffice-server-url: ${ONLYOFFICE_SERVER_URL:http://localhost:8890}
+      document-server-url: ${DOCUMENT_SERVER_URL:http://127.0.0.1:8700}
+      onlyoffice-server-url: ${ONLYOFFICE_SERVER_URL:http://1127.0.0.1:8890}
       storage:
         path: document
       docservice:
@@ -18,7 +18,7 @@ turbo:
         # 连接超时时间
         timeout: 120000
         # 请求onlyoffice密钥
-        secret: turbo
+        secret: ${ONLYOFFICE_SECRET:allio}
         # 验证头部
         header: Authorization
         verify-peer-off: true

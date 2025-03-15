@@ -56,7 +56,7 @@ public class Doc extends TenantEntity {
      */
     @TableField("creator")
     @Schema(name = "拥有者")
-    private Long creator;
+    private String creator;
 
     /**
      * 版本号

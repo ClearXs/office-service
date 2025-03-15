@@ -52,6 +52,7 @@ public class DefaultFileConfigurer implements FileConfigurer<DefaultFileWrapper>
                         .filename(filename)
                         .filepath(wrapper.getFilepath())
                         .permission(permissionMapper.toModel(wrapper))
+                        .docUser(wrapper.getUser())
                         .favorite(true)
                         .isEnableDirectUrl(wrapper.getIsEnableDirectUrl())
                         .build();

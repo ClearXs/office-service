@@ -25,7 +25,7 @@ public class DocCustomization extends TenantEntity {
      */
     @TableField("user_id")
     @Schema(name = "用户id")
-    private Long userId;
+    private String userId;
 
     /**
      * 是否是分享的

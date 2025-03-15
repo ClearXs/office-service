@@ -25,5 +25,5 @@ public class DocTrash extends TenantEntity {
      */
     @Schema(name = "用户id")
     @TableField("user_id")
-    private Long userId;
+    private String userId;
 }

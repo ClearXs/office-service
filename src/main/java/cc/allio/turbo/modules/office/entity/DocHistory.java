@@ -60,7 +60,7 @@ public class DocHistory extends TenantEntity {
      */
     @TableField("maintain_user_id")
     @Schema(name = "维护用户ID")
-    private Long maintainUserId;
+    private String maintainUserId;
 
     /**
      * 维护用户名称

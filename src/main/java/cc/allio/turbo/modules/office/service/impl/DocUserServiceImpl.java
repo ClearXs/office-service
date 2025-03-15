@@ -61,7 +61,7 @@ public class DocUserServiceImpl implements IDocUserService {
 
     @Override
     public Boolean favoriteOfDocument(TurboUser currentUser, Long docId) throws BizException {
-        Long userId = currentUser.getUserId();
+        String userId = currentUser.getUserId();
         return
                 docCustomizationService.update(
                         new DocCustomization(),
@@ -74,7 +74,7 @@ public class DocUserServiceImpl implements IDocUserService {
 
     @Override
     public Boolean cancelFavoriteOfDocument(TurboUser currentUser, Long docId) throws BizException {
-        Long userId = currentUser.getUserId();
+        String userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
                 Wrappers.<DocCustomization>lambdaUpdate()
@@ -86,7 +86,7 @@ public class DocUserServiceImpl implements IDocUserService {
 
     @Override
     public Boolean favorOfDocument(TurboUser currentUser, Long docId) throws BizException {
-        Long userId = currentUser.getUserId();
+        String userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
                 Wrappers.<DocCustomization>lambdaUpdate()
@@ -98,7 +98,7 @@ public class DocUserServiceImpl implements IDocUserService {
 
     @Override
     public Boolean cancelFavorOfDocument(TurboUser currentUser, Long docId) throws BizException {
-        Long userId = currentUser.getUserId();
+        String userId = currentUser.getUserId();
         return docCustomizationService.update(
                 new DocCustomization(),
                 Wrappers.<DocCustomization>lambdaUpdate()
@@ -111,11 +111,11 @@ public class DocUserServiceImpl implements IDocUserService {
     @Override
     @Transactional
     public DocUser getDocUserByCurrentUser(TurboUser currentUser, Long docId) throws BizException {
-        Long userId = currentUser.getUserId();
+        String userId = currentUser.getUserId();
         String userName = currentUser.getUsername();
 
         DocUser docUser = new DocUser();
-        docUser.setUserId(Long.toString(userId));
+        docUser.setUserId(userId);
         docUser.setUsername(userName);
         Doc doc = docService.getById(docId);
         if (doc == null) {
@@ -176,9 +176,9 @@ public class DocUserServiceImpl implements IDocUserService {
         }
         // set doc user customization
         String userId = docUser.getUserId();
-        DocCustomization customization = docCustomizationService.selectOneByDocIdAndUserId(docId, Long.parseLong(userId));
+        DocCustomization customization = docCustomizationService.selectOneByDocIdAndUserId(docId, userId);
         if (customization == null) {
-            customization = docCustomizationService.settingToFavorite(docId, Long.parseLong(userId), false);
+            customization = docCustomizationService.settingToFavorite(docId, userId, false);
         }
         docUser.setCustomization(customization);
         return docUser;
@@ -322,7 +322,7 @@ public class DocUserServiceImpl implements IDocUserService {
      * drop users from document use by {@link CommandManager}
      *
      * @param docKey the doc key
-     * @param users the user id list
+     * @param users  the user id list
      * @return success if true
      */
     Boolean dropUsers(String docKey, List<String> users) {
@@ -339,8 +339,8 @@ public class DocUserServiceImpl implements IDocUserService {
             throw new BizException("not found document");
         }
         kickoutAll(docId);
-        Long id = currentUser.getUserId();
-        ForceSaveArgs args = ForceSaveArgs.builder().userdata(id.toString()).build();
+        String userId = currentUser.getUserId();
+        ForceSaveArgs args = ForceSaveArgs.builder().userdata(userId).build();
         Result result = commandManager.forceSave().execute(doc.getKey(), args);
         return result.getCode() == ResultCode.noError;
     }
@@ -376,36 +376,36 @@ public class DocUserServiceImpl implements IDocUserService {
      */
     List<DocumentDTO> handleDocumentList(List<DocVO> records) {
         // build user ids
-        Set<Long> creatorList =
+        Set<String> creatorList =
                 records.stream().map(DocVO::getCreator).filter(Objects::nonNull).collect(Collectors.toSet());
 
-        Set<Long> collaboratorList =
+        Set<String> collaboratorList =
                 records.stream().map(DocVO::getCooperator).filter(Objects::nonNull).collect(Collectors.toSet());
 
-        Set<Long> userIdList = Sets.newHashSet();
+        Set<String> userIdList = Sets.newHashSet();
         userIdList.addAll(creatorList);
         userIdList.addAll(collaboratorList);
-        Map<Long, SysUser> idKeyUser = Maps.newHashMap();
+        Map<String, SysUser> idKeyUser = Maps.newHashMap();
         if (CollectionUtils.isNotEmpty(userIdList)) {
             List<SysUser> orgUserModels =
                     sysUserService.list(Wrappers.<SysUser>lambdaQuery().in(SysUser::getId, userIdList));
-            idKeyUser = orgUserModels.stream().collect(Collectors.toMap(SysUser::getId, k -> k));
+            idKeyUser = orgUserModels.stream().collect(Collectors.toMap(k -> k.getId().toString(), k -> k));
         }
-        Map<Long, SysUser> finalIdKeyUser = idKeyUser;
+        Map<String, SysUser> finalIdKeyUser = idKeyUser;
         return records.stream()
                 .map(doc -> {
                     DocumentDTO documentDTO = new DocumentDTO();
                     BeanUtils.copyProperties(doc, documentDTO);
 
                     // set collaborator name
-                    Long cooperator = documentDTO.getCooperator();
+                    String cooperator = documentDTO.getCooperator();
                     Optional.ofNullable(cooperator)
                             .map(finalIdKeyUser::get)
                             .map(SysUser::getNickname)
                             .ifPresent(documentDTO::setCollaboratorName);
 
                     // set creator name
-                    Long creator = documentDTO.getCreator();
+                    String creator = documentDTO.getCreator();
                     Optional.ofNullable(creator)
                             .map(finalIdKeyUser::get)
                             .map(SysUser::getNickname)

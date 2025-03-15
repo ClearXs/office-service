@@ -25,15 +25,15 @@ public enum ShareMode {
     ANYONE(
             "anyone",
             (share, docUser) -> {
-                List<Long> cooperator = share.getCooperator();
+                List<String> cooperator = share.getCooperator();
 
                 if (AuthUtil.hasAuthentication() || !cooperator.contains(AuthUtil.getUserId())) {
                     // current user not cooperator
                     throw new BizException("current user unauthorized visit document");
                 }
-                Long userId = AuthUtil.getUserId();
+                String userId = AuthUtil.getUserId();
                 String username = AuthUtil.getUsername();
-                docUser.setUserId(String.valueOf(userId));
+                docUser.setUserId(userId);
                 docUser.setUsername(username);
             }),
 
@@ -46,9 +46,9 @@ public enum ShareMode {
                     docUser.setUserId("anonymous");
                     docUser.setUsername("anonymous");
                 } else {
-                    Long userId = AuthUtil.getUserId();
+                    String userId = AuthUtil.getUserId();
                     String username = AuthUtil.getUsername();
-                    docUser.setUserId(String.valueOf(userId));
+                    docUser.setUserId(userId);
                     docUser.setUsername(username);
                 }
             });
@@ -60,7 +60,7 @@ public enum ShareMode {
     /**
      * through Visitor Pattern allow share mode stateful modification {@link DocUser} content.
      *
-     * @param share the {@link PermissionShareDTO} instance
+     * @param share   the {@link PermissionShareDTO} instance
      * @param docUser the {@link DocUser} instance
      * @throws BizException throw if current user unauthorized
      */

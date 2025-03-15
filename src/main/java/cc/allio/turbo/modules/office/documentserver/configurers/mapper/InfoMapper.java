@@ -3,8 +3,7 @@ package cc.allio.turbo.modules.office.documentserver.configurers.mapper;
 import cc.allio.turbo.modules.office.documentserver.configurers.wrappers.DefaultDocumentWrapper;
 import cc.allio.turbo.modules.office.documentserver.models.configurations.Info;
 import cc.allio.turbo.modules.office.documentserver.util.DocDescriptor;
-import cc.allio.turbo.modules.system.entity.SysUser;
-import cc.allio.turbo.modules.system.service.ISysUserService;
+import cc.allio.turbo.modules.office.vo.DocUser;
 
 /**
  * map to {@link Info}
@@ -15,23 +14,12 @@ import cc.allio.turbo.modules.system.service.ISysUserService;
  */
 public class InfoMapper implements Mapper<DefaultDocumentWrapper, Info> {
 
-    private final ISysUserService sysUserService;
-
-    public InfoMapper(ISysUserService sysUserService) {
-        this.sysUserService = sysUserService;
-    }
-
     @Override
     public Info toModel(DefaultDocumentWrapper wrapper) {
         DocDescriptor doc = wrapper.getDoc();
         Info info = new Info();
-        Long creator = doc.getCreator();
-        if (creator != null) {
-            // set to username
-            SysUser sysUser = sysUserService.getById(creator);
-            info.setOwner(sysUser.getNickname());
-        }
-
+        DocUser docUser = wrapper.getDocUser();
+        info.setOwner(docUser.getUsername());
         info.setUploaded(doc.getCreateTime());
         return info;
     }

@@ -14,12 +14,12 @@ import java.util.function.Consumer;
 public class DocCustomizationServiceImpl extends TurboCrudServiceImpl<DocCustomizationMapper, DocCustomization> implements IDocCustomizationService {
 
     @Override
-    public DocCustomization settingToShared(Long docId, Long userId, boolean shared) throws BizException {
+    public DocCustomization settingToShared(Long docId, String userId, boolean shared) throws BizException {
         return settingsCustomization(docId, userId, d -> d.setShared(shared));
     }
 
     @Override
-    public DocCustomization settingToFavorite(Long docId, Long userId, boolean favorite) throws BizException {
+    public DocCustomization settingToFavorite(Long docId, String userId, boolean favorite) throws BizException {
         return settingsCustomization(docId, userId, d -> d.setFavorite(favorite));
     }
 
@@ -30,7 +30,7 @@ public class DocCustomizationServiceImpl extends TurboCrudServiceImpl<DocCustomi
      * @param userId the user id
      * @param consumer the {@link DocCustomization} callback
      */
-    DocCustomization settingsCustomization(Long docId, Long userId, Consumer<DocCustomization> consumer) throws BizException {
+    DocCustomization settingsCustomization(Long docId , String userId, Consumer<DocCustomization> consumer) throws BizException {
         if (docId == null || userId == null) {
             throw new BizException("doc id or user id is not empty");
         }
@@ -47,7 +47,7 @@ public class DocCustomizationServiceImpl extends TurboCrudServiceImpl<DocCustomi
     }
 
     @Override
-    public DocCustomization selectOneByDocIdAndUserId(Long docId, Long userId) {
+    public DocCustomization selectOneByDocIdAndUserId(Long docId, String userId) {
         return getOne(Wrappers.<DocCustomization>lambdaQuery().eq(DocCustomization::getDocId, docId).eq(DocCustomization::getUserId, userId));
     }
 }

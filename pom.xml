@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>cc.allio</groupId>
+    <groupId>cc.allio.office</groupId>
     <artifactId>office-service</artifactId>
-    <version>0.2</version>
+    <version>0.2.1</version>
     <name>office-service</name>
     <description>office-service在线协作后端</description>
     <url>https://github.com/ClearXs/office-service.git</url>
@@ -41,8 +41,6 @@
         <jodd.version>5.3.0</jodd.version>
 
         <prime-jwt.version>1.3.1</prime-jwt.version>
-
-
     </properties>
 
     <dependencyManagement>
@@ -162,6 +160,11 @@
         <dependency>
             <groupId>cc.allio.uno</groupId>
             <artifactId>uno-data-mongodb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cc.allio.uno</groupId>
+            <artifactId>uno-auto</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>cc.allio.uno</groupId>

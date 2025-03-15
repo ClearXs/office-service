@@ -31,7 +31,7 @@ public class DocVO extends Doc {
      * 协作者
      */
     @Schema(name = "协作者")
-    private Long cooperator;
+    private String cooperator;
 
     /**
      * 权限组

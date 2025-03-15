@@ -13,7 +13,7 @@ public interface IDocCustomizationService extends ITurboCrudService<DocCustomiza
      * @param userId the user id
      * @param shared the shared
      */
-    DocCustomization settingToShared(Long docId, Long userId, boolean shared) throws BizException;
+    DocCustomization settingToShared(Long docId, String userId, boolean shared) throws BizException;
 
     /**
      * setting user doc is favorite. if not exits then create one data
@@ -23,7 +23,7 @@ public interface IDocCustomizationService extends ITurboCrudService<DocCustomiza
      * @param favorite the favorite
      *d
      */
-    DocCustomization settingToFavorite(Long docId, Long userId, boolean favorite) throws BizException;
+    DocCustomization settingToFavorite(Long docId, String userId, boolean favorite) throws BizException;
 
     /**
      * select one {@link DocCustomization} by doc id and user id
@@ -32,5 +32,5 @@ public interface IDocCustomizationService extends ITurboCrudService<DocCustomiza
      * @param userId the user id
      * @return {@link DocCustomization} instance or null
      */
-    DocCustomization selectOneByDocIdAndUserId(Long docId, Long userId);
+    DocCustomization selectOneByDocIdAndUserId(Long docId, String userId);
 }

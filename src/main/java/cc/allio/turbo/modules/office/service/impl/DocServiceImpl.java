@@ -1,6 +1,5 @@
 package cc.allio.turbo.modules.office.service.impl;
 
-import cc.allio.turbo.common.db.entity.IdEntity;
 import cc.allio.turbo.common.db.mybatis.service.impl.TurboCrudServiceImpl;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.util.AuthUtil;
@@ -8,10 +7,10 @@ import cc.allio.turbo.common.util.RedisUtil;
 import cc.allio.turbo.common.util.SecureUtil;
 import cc.allio.turbo.extension.oss.*;
 import cc.allio.turbo.extension.oss.request.OssPutRequest;
-import cc.allio.turbo.modules.auth.provider.TurboUser;
 import cc.allio.turbo.modules.office.constant.DocType;
 import cc.allio.turbo.modules.office.constant.ShareExpired;
 import cc.allio.turbo.modules.office.constant.ShareMode;
+import cc.allio.turbo.modules.office.constant.WebhookType;
 import cc.allio.turbo.modules.office.documentserver.command.CommandManager;
 import cc.allio.turbo.modules.office.documentserver.command.Result;
 import cc.allio.turbo.modules.office.documentserver.command.ResultCode;
@@ -53,7 +52,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -65,6 +63,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
     private final IDocHistoryService docHistoryService;
     private final IDocHistoryUserService docHistoryUserService;
     private final ISysUserService sysUserService;
+    private final IDocWebhookService docWebhookService;
 
     private final ServiceConverter serviceConverter;
     private final JwtManager jwtManager;
@@ -81,6 +80,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                           IDocHistoryService docHistoryService,
                           IDocHistoryUserService docHistoryUserService,
                           IDocCooperatorService docCooperatorService,
+                          IDocWebhookService docWebhookService,
                           ServiceConverter serviceConverter,
                           JwtManager jwtManager,
                           CommandManager commandManager,
@@ -93,6 +93,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         this.docHistoryService = docHistoryService;
         this.docHistoryUserService = docHistoryUserService;
         this.docCooperatorService = docCooperatorService;
+        this.docWebhookService = docWebhookService;
         this.sysUserService = sysUserService;
         this.jwtManager = jwtManager;
         this.fileUtility = fileUtility;
@@ -122,7 +123,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         Integer version = DocDescriptor.trimToVersion(docKey);
         doc.setDocVersion(version);
         // set creator
-        Long userId = AuthUtil.getUserId();
+        String userId = AuthUtil.getUserId();
         doc.setCreator(userId);
         boolean insert = super.save(doc);
         if (insert) {
@@ -329,10 +330,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         history.setVersion(version);
         history.setCreated(DateUtil.formatNow());
 
-        Long userId = AuthUtil.getUserId();
+        String userId = AuthUtil.getUserId();
         String nickname = AuthUtil.getNickname();
         User user = new User();
-        user.setId(String.valueOf(userId));
+        user.setId(userId);
         user.setName(nickname);
         history.setUser(user);
         track.setHistory(history);
@@ -378,9 +379,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                             historyInfo.setCreated(docDescriptor.getCreateTime());
                             // set history user
                             HistoryList.HistoryUser historyUser = new HistoryList.HistoryUser();
-                            Long userId = docHistory.getMaintainUserId();
+                            String userId = docHistory.getMaintainUserId();
                             String username = docHistory.getMaintainUsername();
-                            historyUser.setId(String.valueOf(userId));
+                            historyUser.setId(userId);
                             historyUser.setName(username);
                             historyInfo.setUser(historyUser);
                             // set user and change user
@@ -504,7 +505,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
 
         ShareMode mode = share.getMode();
         if (ShareMode.SPECIFIC == mode) {
-            List<Long> cooperator = share.getCooperator();
+            List<String> cooperator = share.getCooperator();
             // insert document cooperator
             List<DocCooperator> docCooperators =
                     cooperator.stream()
@@ -533,9 +534,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * handle force save.
      * <p>it will be download from onlyoffice latest document, but not be create new version</p>
      *
-     * @param docId the  dock id
+     * @param docId    the  dock id
      * @param filename the filename
-     * @param body the callback {@link Track}
+     * @param body     the callback {@link Track}
      */
     public DocDescriptor onProcessSave(Long docId, String filename, Track body) {
         String downloadUrl = body.getUrl();
@@ -584,9 +585,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * handle force save.
      * <p>it will be download from onlyoffice latest document, but not be create new version</p>
      *
-     * @param docId the  dock id
+     * @param docId    the  dock id
      * @param filename the filename
-     * @param body the callback {@link Track}
+     * @param body     the callback {@link Track}
      */
     public void onProcessForceSave(Long docId, String filename, Track body) {
         String downloadUrl = body.getUrl();
@@ -611,6 +612,11 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             LambdaUpdateWrapper<Doc> updateWrapper = Wrappers.<Doc>lambdaUpdate().eq(Doc::getId, docId).set(Doc::getFile, fileJson);
             update(new Doc(), updateWrapper);
         }
+
+        // trigger edit webhook
+        Track newTrack = body.copy();
+        newTrack.setUrl(attachment.getFilepath());
+        docWebhookService.trigger(WebhookType.EDIT, newTrack);
     }
 
     /**
@@ -622,9 +628,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * </ol>
      *
      * @param latestDocument the old doc
-     * @param docId the doc id
-     * @param filename the file name like as test.docx
-     * @param track the {@link Track} instance
+     * @param docId          the doc id
+     * @param filename       the file name like as test.docx
+     * @param track          the {@link Track} instance
      */
     void onProcessHistorySave(DocDescriptor latestDocument, Long docId, String filename, Track track) {
         // get history attachments
@@ -680,17 +686,12 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                                 });
 
         if (maintainUser != null) {
-            docHistory.setMaintainUserId(Long.parseLong(maintainUser.getId()));
+            docHistory.setMaintainUserId(maintainUser.getId());
             docHistory.setMaintainUsername(maintainUser.getName());
         }
 
         // save to db
         docHistoryService.save(docHistory);
-
-        // save to history user
-        Map<Long, SysUser> userIdMap =
-                sysUsers.stream()
-                        .collect(Collectors.toMap(IdEntity::getId, k -> k));
 
         List<DocHistoryUser> docHistoryUserList = Collections.emptyList();
         if (CollectionUtils.isNotEmpty(changes)) {
@@ -699,16 +700,12 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                             .map(change -> {
                                 ChangesUser user = change.getUser();
                                 String id = user.getId();
+                                String name = user.getName();
                                 DocHistoryUser docHistoryUser = new DocHistoryUser();
                                 // set user info
                                 if (StringUtils.isNotBlank(id)) {
-                                    long userId = Long.parseLong(id);
-                                    docHistoryUser.setUserId(userId);
-                                    SysUser sysUser = userIdMap.get(userId);
-                                    if (sysUser != null) {
-                                        String userName = sysUser.getNickname();
-                                        docHistoryUser.setUsername(userName);
-                                    }
+                                    docHistoryUser.setUserId(id);
+                                    docHistoryUser.setUsername(name);
                                 }
                                 // set change time
                                 String created = change.getCreated();
@@ -730,9 +727,9 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * <p>the first add old document attachment, then from changeurl download changedata to minio and database. </p>
      *
      * @param latestDocument the {@link DocDescriptor}
-     * @param docId the document id
-     * @param filename the filename
-     * @param track the {@link Track}
+     * @param docId          the document id
+     * @param filename       the filename
+     * @param track          the {@link Track}
      * @return the {@link SysAttachment} list
      */
     List<SysAttachment> getHistoryAttachments(DocDescriptor latestDocument, Long docId, String filename, Track track) {

@@ -18,7 +18,7 @@ public class DocCooperator extends TenantEntity {
      */
     @TableField("cooperator")
     @Schema(name = "协作者", example = "系统用户")
-    private Long cooperator;
+    private String cooperator;
 
     /**
      * 文档ID

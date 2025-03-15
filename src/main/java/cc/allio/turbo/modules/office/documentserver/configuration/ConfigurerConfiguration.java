@@ -16,7 +16,6 @@ import cc.allio.turbo.modules.office.documentserver.managers.template.TemplateMa
 import cc.allio.turbo.modules.office.documentserver.models.filemodel.FileModel;
 import cc.allio.turbo.modules.office.documentserver.util.file.FileUtility;
 import cc.allio.turbo.modules.office.documentserver.util.service.ServiceConverter;
-import cc.allio.turbo.modules.system.service.ISysUserService;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,8 +50,8 @@ public class ConfigurerConfiguration {
     }
 
     @Bean
-    public InfoMapper infoMapper(ISysUserService sysUserService) {
-        return new InfoMapper(sysUserService);
+    public InfoMapper infoMapper() {
+        return new InfoMapper();
     }
 
     @Bean

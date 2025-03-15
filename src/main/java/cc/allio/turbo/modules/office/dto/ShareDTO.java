@@ -43,5 +43,5 @@ public class ShareDTO {
      * 协作者
      */
     @Schema(name = "协作者")
-    private List<Long> cooperator = Collections.emptyList();
+    private List<String> cooperator = Collections.emptyList();
 }

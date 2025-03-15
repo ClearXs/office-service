@@ -45,6 +45,11 @@ public class DocumentProperties {
      */
     private Storage storage;
 
+    /**
+     * hook
+     */
+    private Hook hook;
+
     @Data
     public static class Custom {
 
@@ -103,7 +108,7 @@ public class DocumentProperties {
     public static class Customization {
 
         /**
-         *  if the Autosave menu option is enabled or disabled
+         * if the Autosave menu option is enabled or disabled
          */
         private Boolean autosave = true;
 
@@ -114,7 +119,7 @@ public class DocumentProperties {
 
         /**
          * if the additional action buttons are displayed
-         *     in the upper part of the editor window header next to the logo (false) or in the toolbar (true)
+         * in the upper part of the editor window header next to the logo (false) or in the toolbar (true)
          */
         private Boolean compactHeader = false;
 
@@ -130,7 +135,6 @@ public class DocumentProperties {
 
         /**
          * add the request for the forced file saving to the callback handler,when saving the document within the document editing service
-         *
          */
         private Boolean forcesave = false;
 
@@ -155,5 +159,12 @@ public class DocumentProperties {
         private Boolean submitForm = false;
         private Boolean about = false;
         private Boolean feedback = false;
+    }
+
+    @Data
+    public static class Hook {
+
+        // when save callback url
+        private String save;
     }
 }

@@ -37,6 +37,16 @@ public interface IDocService extends ITurboCrudService<Doc> {
     Doc createDocumentFromTemplate(DocumentCreateDTO documentCreate) throws BizException;
 
     /**
+     * upload document
+     *
+     * @param id          the document id
+     * @param filename
+     * @param downloadUrl the download url
+     * @return
+     */
+    Doc upload(Long id, String filename, String downloadUrl) throws IOException, BizException;
+
+    /**
      * from the {@link MultipartFile} file saves to new doc
      *
      * @param file the file
@@ -74,7 +84,7 @@ public interface IDocService extends ITurboCrudService<Doc> {
     /**
      * restore specifies version document
      *
-     * @param docId  the document id
+     * @param docId   the document id
      * @param version the document version
      * @return true if success
      */

@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.Map;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -21,11 +21,18 @@ public class DocWebhook extends TenantEntity {
     @Schema(name = "callback url")
     private String url;
 
-    @TableField(value = "url", typeHandler = JacksonTypeHandler.class)
-    @Schema(name = "callback url")
-    private Map<String, String> headers;
+    @TableField(value = "headers", typeHandler = JacksonTypeHandler.class)
+    @Schema(name = "headers")
+    private List<Header> headers;
 
     @TableField("type")
     @Schema(name = "hook type")
     private WebhookType type;
+
+    @Data
+    public static class Header {
+        private String id;
+        private String key;
+        private String value;
+    }
 }

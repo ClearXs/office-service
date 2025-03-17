@@ -27,6 +27,7 @@ import cc.allio.turbo.modules.office.vo.DocUser;
 import cc.allio.turbo.modules.office.vo.DocVO;
 import cc.allio.turbo.modules.system.entity.SysUser;
 import cc.allio.turbo.modules.system.service.ISysUserService;
+import cc.allio.uno.core.exception.Trys;
 import cc.allio.uno.core.util.CollectionUtils;
 import cc.allio.uno.core.util.JsonUtils;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -387,8 +388,14 @@ public class DocUserServiceImpl implements IDocUserService {
         userIdList.addAll(collaboratorList);
         Map<String, SysUser> idKeyUser = Maps.newHashMap();
         if (CollectionUtils.isNotEmpty(userIdList)) {
+            Set<Long> userIds = Sets.newHashSet();
+
+            for (String userIdString : userIdList) {
+                userIds.add(Trys.onContinue(() -> Long.valueOf(userIdString)));
+            }
+
             List<SysUser> orgUserModels =
-                    sysUserService.list(Wrappers.<SysUser>lambdaQuery().in(SysUser::getId, userIdList));
+                    sysUserService.list(Wrappers.<SysUser>lambdaQuery().in(SysUser::getId, userIds));
             idKeyUser = orgUserModels.stream().collect(Collectors.toMap(k -> k.getId().toString(), k -> k));
         }
         Map<String, SysUser> finalIdKeyUser = idKeyUser;

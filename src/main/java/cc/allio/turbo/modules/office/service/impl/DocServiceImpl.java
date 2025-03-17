@@ -43,6 +43,9 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -190,30 +193,62 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
     }
 
     @Override
+    public Doc upload(Long id, String filename, String downloadUrl) throws IOException, BizException {
+        Request request = new Request.Builder()
+                .url(downloadUrl)
+                .get()
+                .build();
+
+        Response response =
+                new OkHttpClient.Builder()
+                        .build()
+                        .newCall(request)
+                        .execute();
+        InputStream io = response.body().byteStream();
+        return save(id, filename, io);
+    }
+
+    @Override
     public Doc saves(MultipartFile file) throws IOException, BizException {
-        Doc doc = new Doc();
-        Long docId = IdGenerator.defaultGenerator().getNextId();
-        doc.setId(docId);
         String originalFilename = file.getOriginalFilename();
         if (StringUtils.isEmpty(originalFilename)) {
             throw new BizException("file name is empty");
         }
+        return save(IdGenerator.defaultGenerator().getNextId(), file.getOriginalFilename(), file.getInputStream());
+    }
+
+    /**
+     * save document
+     *
+     * @param docId
+     * @param originalFilename
+     * @param io
+     * @return
+     * @throws BizException
+     */
+    Doc save(Long docId, String originalFilename, InputStream io) throws BizException {
         String fileName = originalFilename.substring(0, originalFilename.lastIndexOf(StringPool.DOT));
         String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(StringPool.DOT) + 1);
+        Doc doc = new Doc();
+        doc.setId(docId);
         doc.setTitle(fileName);
         doc.setType(fileExtension);
-        String filename = file.getOriginalFilename();
-        InputStream inputStream = file.getInputStream();
-        String filepath = fileUtility.getFilePath(docId, filename);
-        OssPutRequest request = OssPutRequest.builder().path(Path.from(filepath)).inputStream(inputStream).build();
+        String filepath = fileUtility.getFilePath(docId, originalFilename);
+        OssPutRequest request = OssPutRequest.builder().path(Path.from(filepath)).inputStream(io).build();
         Path path = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
 
         SysAttachment sysAttachment = new SysAttachment();
-        sysAttachment.setFilename(filename);
+        sysAttachment.setFilename(originalFilename);
         String filetype = originalFilename.substring(originalFilename.lastIndexOf(cc.allio.uno.core.StringPool.ORIGIN_DOT));
         sysAttachment.setFiletype(filetype);
         // 文件大小
-        sysAttachment.setFilesize(file.getSize());
+        int filesize = 0;
+        try {
+            filesize = io.available();
+        } catch (IOException e) {
+            // ignore
+        }
+        sysAttachment.setFilesize((long) filesize);
         sysAttachment.setFilepath(path.compose());
         sysAttachmentService.save(sysAttachment);
         String docJsons = JsonUtils.toJson(Lists.newArrayList(sysAttachment));
@@ -613,10 +648,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             update(new Doc(), updateWrapper);
         }
 
-        // trigger edit webhook
-        Track newTrack = body.copy();
-        newTrack.setUrl(attachment.getFilepath());
-        docWebhookService.trigger(WebhookType.EDIT, newTrack);
+        docWebhookService.trigger(WebhookType.EDIT,docId , attachment);
     }
 
     /**

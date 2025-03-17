@@ -37,8 +37,8 @@ public class CallbackHandler {
     public int handle(Long docId, Long fileId, String fileName, Track body) {
         Integer status = body.getStatus();
         String docKey = body.getKey();
-        if (log.isInfoEnabled()) {
-            log.info("handle doc [docId={} docKey={} filename={}]  callback trigger action [{}], the url={} the changesurl={}", docId, docKey, fileName, status, body.getUrl(), body.getChangesurl());
+        if (log.isDebugEnabled()) {
+            log.debug("handle doc [docId={} docKey={} filename={}]  callback trigger action [{}], the url={} the changesurl={}", docId, docKey, fileName, status, body.getUrl(), body.getChangesurl());
         }
         if (status == null) {
             return 0;

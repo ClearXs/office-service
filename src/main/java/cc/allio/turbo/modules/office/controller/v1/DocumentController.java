@@ -50,6 +50,16 @@ public class DocumentController {
     private final IDocService docService;
     private final IDocUserService docUserService;
 
+    @PostMapping("/upload")
+    public R<Doc> upload(@Valid @RequestParam @NotNull Long id, @NotNull String filename, @NotNull String downloadUrl) {
+        try {
+            Doc doc = docService.upload(id, filename, downloadUrl);
+            return R.ok(doc);
+        } catch (Throwable ex) {
+            return R.internalError(ex);
+        }
+    }
+
     @PostMapping("/saves")
     @Operation(summary = "保存文档")
     public R<Doc> saves(@RequestBody MultipartFile file) throws BizException, IOException {

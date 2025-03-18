@@ -53,6 +53,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -179,8 +181,8 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         String filepath = fileUtility.getFilePath(docId, fullname);
         // put attachment to minio
         OssPutRequest request = OssPutRequest.builder().path(Path.from(filepath)).inputStream(blankTemplateStream).build();
-        Path upload = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
-        SysAttachment attachment = createDocumentAttachment(fullname, upload.compose(), type, filesize);
+        Path upload = OssExecutorFactory.getCurrent().upload(request);
+        SysAttachment attachment = createDocumentAttachment(upload.getFullPath(), fullname, upload.compose(), type, filesize);
         boolean insert = sysAttachmentService.save(attachment);
         if (insert) {
             attachments.add(attachment);
@@ -235,7 +237,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         doc.setType(fileExtension);
         String filepath = fileUtility.getFilePath(docId, originalFilename);
         OssPutRequest request = OssPutRequest.builder().path(Path.from(filepath)).inputStream(io).build();
-        Path path = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
+        Path path = OssExecutorFactory.getCurrent().upload(request);
 
         SysAttachment sysAttachment = new SysAttachment();
         sysAttachment.setFilename(originalFilename);
@@ -258,7 +260,8 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
 
     @Override
     public void forceSave(Long docId, String filename, Track track) {
-        onProcessForceSave(docId, filename, track);
+        String literalFilename = URLDecoder.decode(filename, StandardCharsets.UTF_8);
+        onProcessForceSave(docId, literalFilename, track);
     }
 
     /**
@@ -291,9 +294,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
 
     @Override
     public void newVersion(Long docId, String filename, Track track) {
-        DocDescriptor docDescriptor = onProcessSave(docId, filename, track);
+        String literalFilename = URLDecoder.decode(filename, StandardCharsets.UTF_8);
+        DocDescriptor docDescriptor = onProcessSave(docId, literalFilename, track);
         if (docDescriptor != null) {
-            onProcessHistorySave(docDescriptor, docId, filename, track);
+            onProcessHistorySave(docDescriptor, docId, literalFilename, track);
         }
     }
 
@@ -330,7 +334,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
         if (docAttachment != null) {
             String src = docAttachment.getFilepath();
             String dest = src.replace(docAttachment.getFilename(), fullname);
-            OssExecutorFactory.getCurrent().copyObject(src, dest, new OssProperties());
+            OssExecutorFactory.getCurrent().copyObject(src, dest);
             docAttachment.setFilepath(dest);
             List<SysAttachment> attachments = Lists.newArrayList(docAttachment);
             fileJson = JsonUtils.toJson(attachments);
@@ -587,10 +591,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                         .path(Path.from(filepath))
                         .inputStream(is)
                         .build();
-        Path path = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
+        Path path = OssExecutorFactory.getCurrent().upload(request);
 
         // file info saves to db
-        SysAttachment docAttachment = createDocumentAttachment(filename, path.compose(), body.getFiletype(), (long) filesize);
+        SysAttachment docAttachment = createDocumentAttachment(path.getFullPath(), filename, path.compose(), body.getFiletype(), (long) filesize);
         boolean insert = sysAttachmentService.save(docAttachment);
         if (insert) {
             // reset doc file info
@@ -610,6 +614,8 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                 latestDoc.setDocVersion(version);
                 latestDoc.setKey(newVersionDocKey);
             }
+
+            docWebhookService.trigger(WebhookType.EDIT, docId, docAttachment);
             // return latest document version
             return new DocDescriptor(latestDoc);
         }
@@ -637,8 +643,8 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
                         .path(Path.from(filepath))
                         .inputStream(is)
                         .build();
-        Path path = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
-        SysAttachment attachment = createDocumentAttachment(filename, path.compose(), body.getFiletype(), (long) filesize);
+        Path path = OssExecutorFactory.getCurrent().upload(request);
+        SysAttachment attachment = createDocumentAttachment(path.getFullPath(), filename, path.compose(), body.getFiletype(), (long) filesize);
         boolean insert = sysAttachmentService.save(attachment);
         if (insert) {
             // reset doc file info
@@ -648,7 +654,7 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             update(new Doc(), updateWrapper);
         }
 
-        docWebhookService.trigger(WebhookType.EDIT,docId , attachment);
+        docWebhookService.trigger(WebhookType.EDIT, docId, attachment);
     }
 
     /**
@@ -779,10 +785,10 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             // current destination has be ${docVersion}/filename.ext
             String src = previousDocumentAttachment.getFilepath();
             String dest = src.substring(0, src.lastIndexOf(StringPool.SLASH)) + StringPool.SLASH + latestDocDir + filename;
-            Path path = OssExecutorFactory.getCurrent().copyObject(src, dest, new OssProperties());
+            Path path = OssExecutorFactory.getCurrent().copyObject(src, dest);
             String filetype = previousDocumentAttachment.getFiletype();
             Long filesize = previousDocumentAttachment.getFilesize();
-            SysAttachment historyDoc = createDocumentAttachment(filename, path.compose(), filetype, filesize);
+            SysAttachment historyDoc = createDocumentAttachment(path.getFullPath(), filename, path.compose(), filetype, filesize);
             boolean insert = sysAttachmentService.save(historyDoc);
             if (insert) {
                 historyAttachments.add(historyDoc);
@@ -807,10 +813,14 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
             String changeDataFilepath = fileUtility.getFilePath(docId, latestDocDir + changeDataFilename);
             ByteArrayInputStream is = new ByteArrayInputStream(changeDataFile);
             OssPutRequest request = OssPutRequest.builder().path(Path.from(changeDataFilepath)).inputStream(is).build();
-            Path path = OssExecutorFactory.getCurrent().upload(request, new OssProperties());
+            Path path = OssExecutorFactory.getCurrent().upload(request);
 
             // create new file attachment entity
-            changeDataAttachment = createDocumentAttachment(changeDataFilename, path.compose(), "zip", (long) changeDataFile.length);
+            changeDataAttachment =
+                    createDocumentAttachment(path.getFullPath(),
+                            changeDataFilename, path.compose(),
+                            "zip",
+                            (long) changeDataFile.length);
             sysAttachmentService.save(changeDataAttachment);
         }
         // add old changes attachment to attachment list
@@ -830,8 +840,11 @@ public class DocServiceImpl extends TurboCrudServiceImpl<DocMapper, Doc> impleme
      * @param filesize the file size
      * @return {@link SysAttachment} instance
      */
-    SysAttachment createDocumentAttachment(String filename, String filepath, String filetype, Long filesize) {
+    SysAttachment createDocumentAttachment(
+            String fullPath, String filename, String filepath, String filetype, Long filesize) {
+
         SysAttachment attachment = new SysAttachment();
+        attachment.setFullPath(fullPath);
         attachment.setFilename(filename);
         attachment.setFilepath(filepath);
         attachment.setFiletype(filetype);

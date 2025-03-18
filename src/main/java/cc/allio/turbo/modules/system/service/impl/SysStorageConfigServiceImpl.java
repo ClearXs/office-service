@@ -97,6 +97,8 @@ public class SysStorageConfigServiceImpl extends TurboCrudServiceImpl<SysStorage
             trait.setAccessKey(accessKey);
             trait.setSecretKey(secretKey);
             trait.setEndpoint(endpoint);
+            trait.setBaseDir(ossProperties.getBaseDir());
+            trait.setStrategy(ossProperties.getStrategy());
             return trait;
         } else {
             SysStorageConfig storageConfig =

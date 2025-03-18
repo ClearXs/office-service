@@ -39,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 public class SysAttachmentServiceImpl extends TurboCrudServiceImpl<SysAttachmentMapper, SysAttachment> implements ISysAttachmentService {
 
     private final FileProperties fileProperties;
-    private final OssProperties ossProperties;
 
     @Override
     public SysAttachment upload(HttpServletRequest request, MultipartFile file) throws BizException {
@@ -72,7 +71,7 @@ public class SysAttachmentServiceImpl extends TurboCrudServiceImpl<SysAttachment
                         .path(Path.from(originalFilename, Path.AppendStrategy.Date))
                         .build();
 
-        Path path = ossExecutor.upload(ossPutRequest, ossProperties);
+        Path path = ossExecutor.upload(ossPutRequest);
         if (path == null) {
             throw new BizException(ExceptionCodes.ATTACHMENT_UPLOAD_EXECUTOR_NOTFOUND);
         }
@@ -80,6 +79,8 @@ public class SysAttachmentServiceImpl extends TurboCrudServiceImpl<SysAttachment
         long filesize = file.getSize();
         String filetype = originalFilename.substring(originalFilename.lastIndexOf(StringPool.ORIGIN_DOT) + 1);
         SysAttachment sysAttachment = new SysAttachment();
+        String fullPath = path.getFullPath();
+        sysAttachment.setFullPath(fullPath);
         sysAttachment.setFilename(originalFilename);
         sysAttachment.setFilepath(path.compose());
         sysAttachment.setProvider(ossExecutor.getProvider());
@@ -116,7 +117,7 @@ public class SysAttachmentServiceImpl extends TurboCrudServiceImpl<SysAttachment
         OssExecutor ossExecutor = OssExecutorFactory.getCurrent();
         OssGetRequest ossGetRequest = OssGetRequest.builder().path(Path.from(filepath)).build();
         try {
-            OssResponse ossResponse = ossExecutor.download(ossGetRequest, ossProperties);
+            OssResponse ossResponse = ossExecutor.download(ossGetRequest);
             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + convertToFileName(request, filename));
             response.setContentType("application/force-download");
             response.setCharacterEncoding("UTF-8");

@@ -3,7 +3,6 @@ package cc.allio.turbo.modules.office.controller.v1;
 import cc.allio.turbo.common.exception.BizException;
 import cc.allio.turbo.common.web.R;
 import cc.allio.turbo.extension.oss.OssExecutorFactory;
-import cc.allio.turbo.extension.oss.OssProperties;
 import cc.allio.turbo.extension.oss.OssResponse;
 import cc.allio.turbo.extension.oss.Path;
 import cc.allio.turbo.extension.oss.request.OssGetRequest;
@@ -50,7 +49,7 @@ public class DocumentController {
     private final IDocService docService;
     private final IDocUserService docUserService;
 
-    @PostMapping("/upload")
+    @GetMapping("/upload")
     public R<Doc> upload(@Valid @RequestParam @NotNull Long id, @NotNull String filename, @NotNull String downloadUrl) {
         try {
             Doc doc = docService.upload(id, filename, downloadUrl);
@@ -119,8 +118,8 @@ public class DocumentController {
         response.setContentType("application/force-download");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         String filepath = documentAttachment.getFilepath();
-        OssGetRequest request = OssGetRequest.builder().path(Path.from(filepath)).build();
-        OssResponse ossResponse = OssExecutorFactory.getCurrent().download(request, new OssProperties());
+        OssGetRequest request = OssGetRequest.builder().path(Path.from(filepath, filepath)).build();
+        OssResponse ossResponse = OssExecutorFactory.getCurrent().download(request);
         try (var documentStream = ossResponse.getInputStream()) {
             IOUtil.copy(documentStream, response.getOutputStream());
         } catch (Throwable ex) {
@@ -142,8 +141,8 @@ public class DocumentController {
             }
             String fullname = docDescriptor.getFullname();
             String filepath = documentAttachment.getFilepath();
-            OssGetRequest request = OssGetRequest.builder().path(Path.from(filepath)).build();
-            OssResponse ossResponse = OssExecutorFactory.getCurrent().download(request, new OssProperties());
+            OssGetRequest request = OssGetRequest.builder().path(Path.from(filepath, filepath)).build();
+            OssResponse ossResponse = OssExecutorFactory.getCurrent().download(request);
             InputStream documentStream = ossResponse.getInputStream();
             File file = new File(fullname);
             FileUtil.writeStream(file, documentStream);
